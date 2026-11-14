@@ -1180,7 +1180,7 @@ class Component extends DCLogic {
             mods: (e.mods && e.mods.length) ? null : null, id: m.i, name: e.name || nm, kind, group, half: pr, unit, per100: unit === 'g' ? pr : 0, pc: unit === 'pc' ? pr : 0, cat, meta: null,
             img: (e.img && /^\/u\/[0-9a-f]{12}$/.test(e.img)) ? e.img : IMG[c0[0]], imgStyle: 'object-position:50% 50%'
           };
-          if (e.desc) q.meta = { desc: e.desc, ...(e.m ? { m: e.m } : {}) };
+          if (e.desc || e.m) q.meta = { desc: e.desc || '', ...(e.m ? { m: e.m } : {}) };
           if (e.badge) BADGES[m.i] = e.badge;
           if (e.mods) {
             const ms = e.mods.filter((x) => x.on !== false && String(x.n || '').trim()).map((x) => ({ k: x.n.trim(), n: x.n.trim(), p: x.p !== '' && x.p != null && Number(String(x.p).replace(',', '.')) > 0 ? Number(String(x.p).replace(',', '.')) : undefined }));
@@ -1196,7 +1196,7 @@ class Component extends DCLogic {
     const UNITM = { beer: 'l', snack: 'g', piece: 'pc' };
     PRODUCTS = PRODUCTS.map((p) => {
       const e = (s.catalog && s.catalog.edits && s.catalog.edits[p.id]) || {};
-      const q = { ...p, cat0: p.cat, mOn: e.mOn !== undefined ? !!e.mOn : (p.cat === 'drinks' && PRODUCTS0.some((x) => x.id === p.id)) };
+      const q = { ...p, cat0: p.cat, mOn: (e.mt !== undefined && e.mt !== '') ? !!e.mt : /^Пиво/.test(p.kind || '') };
       if (e.sc && SC.find((c) => c.id === e.sc)) q.cat = e.sc;
       if (e.fl) q.group = e.fl;
       const nu = UNITM[e.upre];
@@ -1297,9 +1297,9 @@ class Component extends DCLogic {
         isOpen: s.openId === p.id,
         openCls: s.openId === p.id ? 'open' : '',
         desc: (p.meta && p.meta.desc) || 'Тут буде опис. Його додають в адмінці.',
-        hasMeters: !!p.mOn && ['str', 'bit', 'den'].some((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false),
+        hasMeters: !!p.mOn && ['str', 'bit', 'den'].some((k) => { const o = ((p.meta && p.meta.m) || DEFAULT_M)[k] || {}; return o.on !== false && String(o.v == null ? '' : o.v).replace('—', '').trim() !== ''; }),
         hasVols: !isPc,
-        meters: ['str', 'bit', 'den'].filter((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false).map((k) => {
+        meters: ['str', 'bit', 'den'].filter((k) => { const o = ((p.meta && p.meta.m) || DEFAULT_M)[k] || {}; return o.on !== false && String(o.v == null ? '' : o.v).replace('—', '').trim() !== ''; }).map((k) => {
           const mm = (p.meta && p.meta.m) || DEFAULT_M;
           return { label: MLABEL[k], v: mm[k].v, segs: [1, 2, 3, 4, 5].map((n) => ({ cls: n <= mm[k].l ? 'on' : '' })) };
         }),
