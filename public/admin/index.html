@@ -967,7 +967,7 @@ class Component extends DCLogic {
     };
     const newItems = D.prods.filter(isNewP).map(rowOf);
     const q = s.q.trim().toLowerCase();
-    const found = q ? D.prods.filter((p) => ((s.edits[p.i] && s.edits[p.i].name) || p.n).toLowerCase().indexOf(q) >= 0).slice(0, 40).map(rowOf) : [];
+    const found = q ? D.prods.filter((p) => (((s.edits[p.i] && s.edits[p.i].name) || '') + ' ' + p.n).toLowerCase().indexOf(q) >= 0).slice(0, 40).map(rowOf) : [];
 
     const TABS = [['products', 'Товари'], ['banners', 'Банери'], ['orders', 'Замовлення'], ['stats', 'Статистика'], ['site', 'Сайт']];
     const tabs = TABS.map((t) => ({ label: t[1], cls: s.tab === t[0] ? 'on' : '', active: s.tab === t[0], pick: () => { this.setState({ tab: t[0] }); if (t[0] === 'orders' || t[0] === 'stats') this.loadOrders(); } }));
