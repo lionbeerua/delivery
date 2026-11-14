@@ -635,7 +635,7 @@ class Component extends DCLogic {
       .catch(() => { this.setState({ orders: prev }); });
   }
 
-  componentWillUnmount() { if (this._poll) clearInterval(this._poll); document.removeEventListener('dragover', this._dzOver); document.removeEventListener('drop', this._dzDrop); document.removeEventListener('dragleave', this._dzLeave); }
+  componentWillUnmount() { if (this._poll) clearInterval(this._poll); document.removeEventListener('dragover', this._dzOver); document.removeEventListener('mouseover', this._dzHover); document.removeEventListener('paste', this._paste); document.removeEventListener('drop', this._dzDrop); document.removeEventListener('dragleave', this._dzLeave); }
 
   componentDidMount() {
     const zone = (e) => { const t = e.target && e.target.closest ? e.target.closest('[data-dz]') : null; return t; };
@@ -657,6 +657,18 @@ class Component extends DCLogic {
       else if (k && k[0] === 'b') this.uploadImage(Number(k.slice(1)) - 1, f);
     };
     this._dzLeave = (e) => { if (!e.relatedTarget) document.querySelectorAll('.dz-over').forEach((x) => x.classList.remove('dz-over')); };
+    this._dzHover = (e) => { const z = zone(e); if (z) this._hoverDz = z.getAttribute('data-dz'); };
+    this._paste = (e) => {
+      const items = (e.clipboardData && e.clipboardData.items) || [];
+      let f = null;
+      for (let i = 0; i < items.length; i++) { if (items[i].kind === 'file' && /^image\//.test(items[i].type)) { f = items[i].getAsFile(); break; } }
+      if (!f) return;
+      const st = this.state;
+      if (st.drOpen) { e.preventDefault(); this.uploadPhoto(f); return; }
+      if (st.tab === 'banners' && this._hoverDz && this._hoverDz[0] === 'b') { e.preventDefault(); this.uploadImage(Number(this._hoverDz.slice(1)) - 1, f); }
+    };
+    document.addEventListener('mouseover', this._dzHover);
+    document.addEventListener('paste', this._paste);
     document.addEventListener('dragover', this._dzOver);
     document.addEventListener('drop', this._dzDrop);
     document.addEventListener('dragleave', this._dzLeave);
@@ -1067,7 +1079,7 @@ class Component extends DCLogic {
         unitHint: cur.w ? 'за 100 г' : 'за одиницю в Poster'
       },
       onEName: dset('name'), onEPrice: dset('price'), onEDesc: dset('desc'), onEStr: dset('str'), onEDen: dset('den'), onEProd: dset('prod'),
-      photoLabel: s.photoBusy ? 'Завантажую…' : (s.draft.img ? 'Замінити фото' : 'Завантажити вертикальне фото'),
+      photoLabel: s.photoBusy ? 'Завантажую…' : (s.draft.img ? 'Замінити фото' : 'Завантажити, перетягнути або Ctrl+V'),
       pickPhoto: () => { const el = document.getElementById('pf'); if (el) el.click(); },
       onPhoto: (e) => { const f = e.target.files && e.target.files[0]; this.uploadPhoto(f); e.target.value = ''; },
       clearPhoto: () => { const id = s.editId; const draft = { ...this.state.draft, img: '' }; this.setState({ draft, edits: { ...this.state.edits, [id]: { ...draft, upre: this.presetToSave() } } }); this.saveAll(); },
