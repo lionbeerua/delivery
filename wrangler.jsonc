@@ -1,9 +1,12 @@
 {
   "name": "delivery",
+  "main": "src/index.js",
   "compatibility_date": "2025-11-01",
   "workers_dev": true,
   "assets": {
     "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
     "not_found_handling": "404-page"
   }
 }
