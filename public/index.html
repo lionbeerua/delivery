@@ -1197,6 +1197,7 @@ class Component extends DCLogic {
       const e = (s.catalog && s.catalog.edits && s.catalog.edits[p.id]) || {};
       const q = { ...p, cat0: p.cat, mOn: e.mOn !== undefined ? !!e.mOn : (p.cat === 'drinks' && PRODUCTS0.some((x) => x.id === p.id)) };
       if (e.sc && SC.find((c) => c.id === e.sc)) q.cat = e.sc;
+      if (e.fl) q.group = e.fl;
       const nu = UNITM[e.upre];
       if (nu && nu !== q.unit) {
         const pr = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : (q.unit === 'g' ? q.per100 : (q.unit === 'pc' ? q.pc : q.half));
@@ -1345,9 +1346,12 @@ class Component extends DCLogic {
     const LB = (s.catalog && s.catalog.site && s.catalog.site.labels) || {};
     const lbl = (cid, d) => (String(LB[cid] == null ? '' : LB[cid]).trim() || d);
     const SNACK_F = [{ id: 'all', label: 'Усі' }, { id: 'fish', label: lbl('10', 'Риба') }, { id: 'squid', label: lbl('9', 'Кальмар') }, { id: 'meat', label: lbl('11', "М'ясо") }, { id: 'nuts', label: lbl('12', 'Горіхи') }];
+    const SF = (s.catalog && s.catalog.site && s.catalog.site.filters) || {};
+    const DEFF = { drinks: FILTERS.filter((f) => f.id !== 'all').map((f) => ({ id: f.id, n: f.label })), snacks: SNACK_F.filter((f) => f.id !== 'all').map((f) => ({ id: f.id, n: f.label })) };
+    const FL = Array.isArray(SF[CURC]) ? SF[CURC] : (DEFF[CURC] || []);
     const present = {};
-    PRODUCTS.forEach((p) => { present[p.group] = true; });
-    const filters = (CURC === 'snacks' ? SNACK_F : (CURC === 'drinks' ? FILTERS : [])).filter((f) => f.id === 'all' || present[f.id]).map((f) => ({
+    PRODUCTS.forEach((p) => { if (p.cat === CURC) present[p.group] = true; });
+    const filters = [{ id: 'all', label: 'Усі' }].concat(FL.filter((f) => f && f.id && String(f.n || '').trim()).map((f) => ({ id: f.id, label: f.n }))).filter((f) => f.id === 'all' || present[f.id]).map((f) => ({
       label: f.label,
       cls: f.id === s.filter ? 'on' : '',
       active: f.id === s.filter,
