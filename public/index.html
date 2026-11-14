@@ -1205,6 +1205,8 @@ class Component extends DCLogic {
       }
       return q;
     });
+    const ORD = (s.catalog && s.catalog.site && s.catalog.site.order) || {};
+    PRODUCTS = PRODUCTS.map((p, k) => ({ p, k })).sort((x, y) => { const ox = ORD[x.p.cat] || [], oy = ORD[y.p.cat] || []; const ix = ox.indexOf(x.p.id), iy = oy.indexOf(y.p.id); return (ix < 0 ? 1e6 + x.k : ix) - (iy < 0 ? 1e6 + y.k : iy); }).map((x) => x.p);
     const FILTERS = [
       { id: 'all', label: 'Усі' },
       { id: 'lager', label: 'Світле' },

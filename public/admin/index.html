@@ -141,6 +141,9 @@ body{background:#000}
 .lg::before{display:none}
 .scrim{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(0,0,0,.7)}
 .dr{background:#0f0f0f;backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid #2a2a2a;border-bottom:0}
+.grip{cursor:grab;color:var(--mu);font-size:20px;line-height:1;padding:0 4px;user-select:none}
+.row.dragging{opacity:.4}
+.row.dover{outline:2px dashed #f2c142;outline-offset:2px}
 .dz-over{border-color:#f2c142!important;background:rgba(242,193,66,.14)!important;color:#f2c142!important;outline:2px dashed #f2c142;outline-offset:2px}
 .bprev{display:block;width:100%;max-height:220px;object-fit:cover;border-radius:14px;margin-bottom:10px;border:1px solid #2a2a2a}
 .savebar{position:fixed;left:12px;right:12px;bottom:14px;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 10px 10px 18px;border-radius:18px;background:#1b1b1b;border:1px solid #f2c142;box-shadow:0 10px 30px rgba(0,0,0,.6);color:#fff;font-weight:600;font-size:15px;max-width:640px;margin:0 auto}
@@ -222,9 +225,12 @@ body{background:#000}
 </div>
 <div class="cat-body"><div class="cat-in"><div class="plist">
 <sc-for list="{{c.items}}" as="p" hint-placeholder-count="2">
-<div class="row">
+<div class="row {{p.dcls}}" draggable="true" onDragStart="{{p.dstart}}" onDragOver="{{p.dover}}" onDrop="{{p.ddrop}}" onDragEnd="{{p.dend}}">
+<span class="grip" aria-hidden="true" title="Перетягніть, щоб змінити порядок">⠿</span>
 <input class="sw" type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}" aria-label="Показувати на сайті">
 <div class="row-t"><div class="row-n">{{p.name}}</div><div class="row-p">{{p.priceText}}</div></div>
+<button class="edit" onClick="{{p.up}}" aria-label="Вище">↑</button>
+<button class="edit" onClick="{{p.down}}" aria-label="Нижче">↓</button>
 <button class="edit" onClick="{{p.edit}}">Змінити</button>
 </div>
 </sc-for>
@@ -930,12 +936,25 @@ class Component extends DCLogic {
     const viewCats = curSC.map((c) => ({ id: c.id, n: c.n || '—' }));
     if (D.prods.some((p) => on[p.i] && scIds.indexOf(effCat(p)) < 0)) viewCats.push({ id: '_none', n: 'Без категорії (не видно на сайті)' });
     const scView = viewCats.map((c) => {
-      const items = D.prods.filter((p) => on[p.i] && (c.id === '_none' ? scIds.indexOf(effCat(p)) < 0 : effCat(p) === c.id));
+      const ordL = (s.site && s.site.order && s.site.order[c.id]) || [];
+      const items0 = D.prods.filter((p) => on[p.i] && (c.id === '_none' ? scIds.indexOf(effCat(p)) < 0 : effCat(p) === c.id));
+      const items = items0.map((p, k) => ({ p, k })).sort((x, y) => { const ix = ordL.indexOf(x.p.i), iy = ordL.indexOf(y.p.i); return (ix < 0 ? 1e6 + x.k : ix) - (iy < 0 ? 1e6 + y.k : iy); }).map((x) => x.p);
+      const ids = items.map((p) => p.i);
+      const saveOrder = (arr) => this.setState({ site: { ...this.state.site, order: { ...((this.state.site && this.state.site.order) || {}), [c.id]: arr } } });
+      const moveTo = (from, to) => { if (from === to || from < 0 || to < 0 || to >= ids.length) return; const arr = ids.slice(); const [x] = arr.splice(from, 1); arr.splice(to, 0, x); saveOrder(arr); };
       const open = s.openSc === c.id;
       return {
         name: c.n, status: items.length ? items.length + ' на сайті' : 'Порожньо', cls: open ? 'open' : '', isOpen: open, empty: items.length === 0,
         expand: () => this.setState({ openSc: open ? '' : c.id }),
-        items: open ? items.map(rowOf) : []
+        items: open ? items.map((p, i) => ({
+          ...rowOf(p),
+          up: () => moveTo(i, i - 1), down: () => moveTo(i, i + 1),
+          dcls: this._drag === p.i ? 'dragging' : (this._over === p.i && this._drag && this._drag !== p.i ? 'dover' : ''),
+          dstart: (e) => { this._drag = p.i; try { e.dataTransfer.setData('text/plain', p.i); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* ignore */ } },
+          dover: (e) => { if (!this._drag) return; e.preventDefault(); if (this._over !== p.i) { this._over = p.i; this.forceUpdate(); } },
+          ddrop: (e) => { if (!this._drag) return; e.preventDefault(); const f = ids.indexOf(this._drag); this._drag = null; this._over = null; moveTo(f, i); this.forceUpdate(); },
+          dend: () => { this._drag = null; this._over = null; this.forceUpdate(); }
+        })) : []
       };
     });
     const DEFFL = { drinks: [['lager', 'Світле'], ['wheat', 'Пшеничне'], ['ale', 'Ель'], ['dark', 'Темне'], ['cider', 'Сидр'], ['soft', 'Квас і лимонад'], ['other', 'Особливе']].map((x) => ({ id: x[0], n: x[1] })), snacks: [['fish', 'Риба'], ['squid', 'Кальмар'], ['meat', "М'ясо"], ['nuts', 'Горіхи']].map((x) => ({ id: x[0], n: ((s.site && s.site.labels) || {})[({ fish: '10', squid: '9', meat: '11', nuts: '12' })[x[0]]] || x[1] })) };
