@@ -770,6 +770,12 @@ class Component extends DCLogic {
     return on;
   }
 
+  defRank(p, k) {
+    const DC = {"179": "drinks", "299": "drinks", "180": "drinks", "296": "drinks", "206": "drinks", "207": "drinks", "270": "drinks", "220": "drinks", "106": "drinks", "105": "drinks", "183": "drinks", "268": "drinks", "108": "drinks", "110": "drinks", "109": "drinks", "113": "drinks", "184": "drinks", "98": "drinks", "267": "drinks", "298": "drinks", "115": "drinks", "117": "drinks", "116": "drinks", "219": "drinks", "294": "drinks", "295": "drinks", "297": "drinks", "112": "drinks", "208": "drinks", "102": "drinks", "120": "snacks", "203": "snacks", "51": "snacks", "76": "snacks", "50": "snacks", "58": "snacks", "281": "snacks", "279": "snacks", "59": "snacks", "83": "snacks", "209": "bottle", "127": "bottle", "137": "bottle", "142": "bottle", "135": "bottle", "136": "bottle", "305": "sweet", "302": "sweet", "303": "sweet", "201": "sweet", "231": "sweet", "232": "sweet", "306": "snacks", "19": "snacks", "47": "snacks"};
+    const ix = Object.keys(DC).indexOf(p.i);
+    return ix >= 0 ? ix : 100000 + k;
+  }
+
   defCat(p) {
     const DC = {"179": "drinks", "299": "drinks", "180": "drinks", "296": "drinks", "206": "drinks", "207": "drinks", "270": "drinks", "220": "drinks", "106": "drinks", "105": "drinks", "183": "drinks", "268": "drinks", "108": "drinks", "110": "drinks", "109": "drinks", "113": "drinks", "184": "drinks", "98": "drinks", "267": "drinks", "298": "drinks", "115": "drinks", "117": "drinks", "116": "drinks", "219": "drinks", "294": "drinks", "295": "drinks", "297": "drinks", "112": "drinks", "208": "drinks", "102": "drinks", "120": "snacks", "203": "snacks", "51": "snacks", "76": "snacks", "50": "snacks", "58": "snacks", "281": "snacks", "279": "snacks", "59": "snacks", "83": "snacks", "209": "bottle", "127": "bottle", "137": "bottle", "142": "bottle", "135": "bottle", "136": "bottle", "305": "sweet", "302": "sweet", "303": "sweet", "201": "sweet", "231": "sweet", "232": "sweet", "306": "snacks", "19": "snacks", "47": "snacks"};
     if (DC[p.i]) return DC[p.i];
@@ -935,19 +941,28 @@ class Component extends DCLogic {
     const scIds = curSC.map((c) => c.id);
     const viewCats = curSC.map((c) => ({ id: c.id, n: c.n || '—' }));
     if (D.prods.some((p) => on[p.i] && scIds.indexOf(effCat(p)) < 0)) viewCats.push({ id: '_none', n: 'Без категорії (не видно на сайті)' });
+    const hasPrice = (p) => {
+      const e = s.edits[p.i] || {};
+      const pr = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : this.baseP(p);
+      if (pr > 0) return true;
+      const ms = e.mods || (DEFMODS[p.i] ? DEFMODS[p.i] : []);
+      return ms.some((x) => Number(String((x && x.p) != null ? x.p : '').replace(',', '.')) > 0);
+    };
     const scView = viewCats.map((c) => {
       const ordL = (s.site && s.site.order && s.site.order[c.id]) || [];
       const items0 = D.prods.filter((p) => on[p.i] && (c.id === '_none' ? scIds.indexOf(effCat(p)) < 0 : effCat(p) === c.id));
-      const items = items0.map((p, k) => ({ p, k })).sort((x, y) => { const ix = ordL.indexOf(x.p.i), iy = ordL.indexOf(y.p.i); return (ix < 0 ? 1e6 + x.k : ix) - (iy < 0 ? 1e6 + y.k : iy); }).map((x) => x.p);
+      const items = items0.map((p, k) => ({ p, k })).sort((x, y) => { const ix = ordL.indexOf(x.p.i), iy = ordL.indexOf(y.p.i); return (ix < 0 ? 1e6 + this.defRank(x.p, x.k) : ix) - (iy < 0 ? 1e6 + this.defRank(y.p, y.k) : iy); }).map((x) => x.p);
       const ids = items.map((p) => p.i);
       const saveOrder = (arr) => this.setState({ site: { ...this.state.site, order: { ...((this.state.site && this.state.site.order) || {}), [c.id]: arr } } });
       const moveTo = (from, to) => { if (from === to || from < 0 || to < 0 || to >= ids.length) return; const arr = ids.slice(); const [x] = arr.splice(from, 1); arr.splice(to, 0, x); saveOrder(arr); };
       const open = s.openSc === c.id;
+      const noPrice = (arr) => arr.filter((p) => !hasPrice(p)).length;
       return {
-        name: c.n, status: items.length ? items.length + ' на сайті' : 'Порожньо', cls: open ? 'open' : '', isOpen: open, empty: items.length === 0,
+        name: c.n, status: items.length ? (items.length - noPrice(items) + ' на сайті' + (noPrice(items) ? ' · ' + noPrice(items) + ' без ціни' : '')) : 'Порожньо', cls: open ? 'open' : '', isOpen: open, empty: items.length === 0,
         expand: () => this.setState({ openSc: open ? '' : c.id }),
         items: open ? items.map((p, i) => ({
           ...rowOf(p),
+          priceText: hasPrice(p) ? rowOf(p).priceText : 'Немає ціни, на сайті не видно',
           up: () => moveTo(i, i - 1), down: () => moveTo(i, i + 1),
           dcls: this._drag === p.i ? 'dragging' : (this._over === p.i && this._drag && this._drag !== p.i ? 'dover' : ''),
           dstart: (e) => { this._drag = p.i; try { e.dataTransfer.setData('text/plain', p.i); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* ignore */ } },

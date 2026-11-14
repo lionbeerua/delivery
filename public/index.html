@@ -1164,7 +1164,8 @@ class Component extends DCLogic {
           const e = (C.edits && C.edits[m.i]) || {};
           const ep = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : 0;
           const pr = ep > 0 ? ep : m.p;
-          if (!(pr > 0)) return;
+          const mp = (e.mods || []).some((x) => x && x.on !== false && Number(String(x.p == null ? '' : x.p).replace(',', '.')) > 0);
+          if (!(pr > 0) && !mp) return;
           let nm = m.n.replace(/\s+(0[.,]\d+|\d+)\s*(л|мл|l|ml)\.?$/i, '').replace(/\s+(з\/б|з\.б\.?)$/i, '').trim();
           let kind = '', unit = 'pc', cat = 'snacks', group = 'other';
           const lead = nm.match(/^(\S+)\s+на розлив\s+/i);
