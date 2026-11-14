@@ -567,7 +567,7 @@ button:active{transform:scale(.95);transition-duration:.12s}
 </div>
 <h3><button class="nm" onClick="{{p.open}}" aria-expanded="{{p.isOpen}}">{{p.name}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></h3>
 <div class="more"><div class="more-in">
-<p class="desc2">{{p.desc}}</p>
+<sc-if value="{{p.hasRealDesc}}" hint-placeholder-val="{{ false }}"><p class="desc2">{{p.desc}}</p></sc-if>
 <sc-if value="{{p.hasMeters}}" hint-placeholder-val="{{ false }}">
 <div class="meters">
 <sc-for list="{{p.meters}}" as="m" hint-placeholder-count="3">
@@ -1108,8 +1108,6 @@ class Component extends DCLogic {
     };
     const seen = {};
     const META = {
-      '179': { desc: 'Приклад опису. [ВСТАВ опис товару в адмінці]' },
-      '299': { desc: 'Приклад опису. [ВСТАВ опис товару в адмінці]' },
       '294': { name: 'Kysil Pastry Sour Smoothie', desc: 'ШО Brewery', m: { str: { v: '4', l: 1 }, bit: { v: '5', l: 1 }, den: { v: '14', l: 3 } } }
     };
     const DEFAULT_M = { str: { v: '—', l: 0 }, bit: { v: '—', l: 0 }, den: { v: '—', l: 0 } };
@@ -1276,7 +1274,9 @@ class Component extends DCLogic {
       const vol = volOf(p);
       const qty = s.cart.filter((l) => l.id === p.id).reduce((a, l) => a + l.qty, 0);
       const flash = s.flashId === p.id;
-      const hasDesc = !!(p.meta && p.meta.desc);
+      const mVis = !!p.mOn && ['str', 'bit', 'den'].some((k) => { const o = ((p.meta && p.meta.m) || DEFAULT_M)[k] || {}; return o.on !== false && String(o.v == null ? '' : o.v).replace('—', '').trim() !== ''; });
+      const realDesc = !!(p.meta && p.meta.desc && String(p.meta.desc).trim());
+      const hasDesc = realDesc || mVis;
       const mk = s.selMod[p.id] || '';
       return {
         hasMods: !!p.mods,
@@ -1296,7 +1296,8 @@ class Component extends DCLogic {
         badgeCls: BADGES[p.id] ? 'b-' + BADGES[p.id] : '',
         isOpen: s.openId === p.id,
         openCls: s.openId === p.id ? 'open' : '',
-        desc: (p.meta && p.meta.desc) || 'Тут буде опис. Його додають в адмінці.',
+        desc: realDesc ? p.meta.desc : '',
+        hasRealDesc: realDesc,
         hasMeters: !!p.mOn && ['str', 'bit', 'den'].some((k) => { const o = ((p.meta && p.meta.m) || DEFAULT_M)[k] || {}; return o.on !== false && String(o.v == null ? '' : o.v).replace('—', '').trim() !== ''; }),
         hasVols: !isPc,
         meters: ['str', 'bit', 'den'].filter((k) => { const o = ((p.meta && p.meta.m) || DEFAULT_M)[k] || {}; return o.on !== false && String(o.v == null ? '' : o.v).replace('—', '').trim() !== ''; }).map((k) => {
