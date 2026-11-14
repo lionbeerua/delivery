@@ -1,0 +1,9 @@
+{
+  "name": "delivery",
+  "compatibility_date": "2025-11-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page"
+  }
+}
