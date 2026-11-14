@@ -73,6 +73,11 @@ export default {
       if (!buf) return new Response('Не знайдено', { status: 404 });
       return new Response(buf, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable' } });
     }
+    // Каталог для сайту: що увімкнено, ціни, описи, бейджі
+    if (url.pathname === '/api/catalog' && request.method === 'GET') {
+      const c = env.KV ? await env.KV.get('catalog', 'json') : null;
+      return json(c || {}, 200, { 'Cache-Control': 'public, max-age=30' });
+    }
     // Банери для сайту
     if (url.pathname === '/api/banners' && request.method === 'GET') {
       return json(await getBanners(env), 200, { 'Cache-Control': 'public, max-age=30' });
@@ -105,6 +110,19 @@ export default {
       if (!(await isLoggedIn(request, env))) {
         if (url.pathname.startsWith('/api/')) return json({ error: 'auth' }, 401);
         return loginPage('');
+      }
+      if (url.pathname === '/api/admin/catalog' && request.method === 'GET') {
+        const c = env.KV ? await env.KV.get('catalog', 'json') : null;
+        return json(c || {}, 200, { 'Cache-Control': 'no-store' });
+      }
+      if (url.pathname === '/api/admin/catalog' && request.method === 'POST') {
+        if (!env.KV) return json({ error: 'Сховище KV не підключене' }, 503);
+        const txt = await request.text();
+        let c = null;
+        try { c = JSON.parse(txt); } catch (e) { /* нижче */ }
+        if (!c || typeof c !== 'object' || !c.on || txt.length > 400000) return json({ error: 'bad' }, 400);
+        await env.KV.put('catalog', JSON.stringify({ on: c.on, edits: c.edits || {}, tara: c.tara || {}, site: c.site || {}, tgOn: c.tgOn !== false }));
+        return json({ ok: true });
       }
       if (url.pathname === '/api/admin/banners' && request.method === 'GET') return json(await getBanners(env), 200, { 'Cache-Control': 'no-store' });
       if (url.pathname === '/api/admin/banners' && request.method === 'POST') {

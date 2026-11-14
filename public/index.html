@@ -1009,6 +1009,7 @@ class Component extends DCLogic {
     bump: false,
     slide: 0,
     banners: null,
+    catalog: null,
     theme: '0',
     cat: 'drinks',
     q: '',
@@ -1033,6 +1034,7 @@ class Component extends DCLogic {
   componentDidMount() {
     this._last = Date.now();
     try {
+      fetch('/api/catalog').then((r) => (r.ok ? r.json() : null)).then((c) => { if (c && c.on) this.setState({ catalog: c }); }).catch(() => {});
       fetch('/api/banners').then((r) => (r.ok ? r.json() : null)).then((list) => { if (Array.isArray(list) && list.length) this.setState({ banners: list, slide: 0 }); }).catch(() => {});
     } catch (e) { /* без сервера лишається стандартний банер */ }
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1103,7 +1105,7 @@ class Component extends DCLogic {
     };
     const DEFAULT_M = { str: { v: '—', l: 0 }, bit: { v: '—', l: 0 }, den: { v: '—', l: 0 } };
     const MLABEL = { str: 'Міцність', bit: 'Гіркота', den: 'Щільність' };
-    const PRODUCTS = RAW.map((r) => {
+    const PRODUCTS0 = RAW.map((r) => {
       const arr = CROPS[r.g] || CROPS.other;
       const i = (seen[r.g] = (seen[r.g] ?? -1) + 1) % arr.length;
       const c = arr[i];
@@ -1116,12 +1118,32 @@ class Component extends DCLogic {
     });
     const VOLS = [0.5, 1, 1.5, 2, 3];
     const TARA = { 0.5: 6, 1: 7, 1.5: 7, 2: 8, 3: 9 };
+    if (s.catalog && s.catalog.tara) Object.keys(s.catalog.tara).forEach((k) => { const v = Number(String(s.catalog.tara[k]).replace(',', '.')); if (v > 0) TARA[k] = v; });
     const OWN = { '179': 'ph_remeslo', '299': 'ph_tarr', '180': 'ph_grape', '296': 'ph_prim', '206': 'ph_frag' };
-    PRODUCTS.forEach((p) => { if (OWN[p.id]) { p.img = '/_blob/' + OWN[p.id]; p.imgStyle = 'object-position:50% 50%'; } });
+    PRODUCTS0.forEach((p) => { if (OWN[p.id]) { p.img = '/_blob/' + OWN[p.id]; p.imgStyle = 'object-position:50% 50%'; } });
     const BADGES = {};
-    const dr = PRODUCTS.filter((p) => p.cat === 'drinks');
+    const dr = PRODUCTS0.filter((p) => p.cat === 'drinks');
     if (dr[0]) BADGES[dr[0].id] = 'new';
     if (dr[1]) BADGES[dr[1].id] = 'hit';
+    let PRODUCTS = PRODUCTS0;
+    if (s.catalog && s.catalog.on) {
+      const C = s.catalog;
+      Object.keys(BADGES).forEach((k) => { delete BADGES[k]; });
+      PRODUCTS = PRODUCTS0.filter((p) => C.on[p.id]).map((p) => {
+        const e = (C.edits && C.edits[p.id]) || {};
+        const q = { ...p };
+        if (e.name) q.name = e.name;
+        const pr = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : 0;
+        if (pr > 0) { q.half = pr; if (q.unit === 'g') q.per100 = pr; if (q.unit === 'pc') q.pc = pr; }
+        if (e.desc !== undefined || e.m) q.meta = { ...(p.meta || {}), desc: e.desc !== undefined ? e.desc : ((p.meta && p.meta.desc) || ''), ...(e.m ? { m: e.m } : {}) };
+        if (e.badge) BADGES[p.id] = e.badge;
+        if (e.mods) {
+          const ms = e.mods.filter((m) => m.on !== false && String(m.n || '').trim()).map((m) => ({ k: m.n.trim(), n: m.n.trim(), p: m.p !== '' && m.p != null && Number(String(m.p).replace(',', '.')) > 0 ? Number(String(m.p).replace(',', '.')) : undefined }));
+          q.mods = ms.length ? ms : null;
+        }
+        return q;
+      });
+    }
     const FILTERS = [
       { id: 'all', label: 'Усі' },
       { id: 'lager', label: 'Світле' },
@@ -1211,9 +1233,9 @@ class Component extends DCLogic {
         isOpen: s.openId === p.id,
         openCls: s.openId === p.id ? 'open' : '',
         desc: (p.meta && p.meta.desc) || 'Тут буде опис. Його додають в адмінці.',
-        hasMeters: p.cat === 'drinks',
+        hasMeters: p.cat === 'drinks' && ['str', 'bit', 'den'].some((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false),
         hasVols: !isPc,
-        meters: ['str', 'bit', 'den'].map((k) => {
+        meters: ['str', 'bit', 'den'].filter((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false).map((k) => {
           const mm = (p.meta && p.meta.m) || DEFAULT_M;
           return { label: MLABEL[k], v: mm[k].v, segs: [1, 2, 3, 4, 5].map((n) => ({ cls: n <= mm[k].l ? 'on' : '' })) };
         }),
