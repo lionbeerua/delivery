@@ -1310,7 +1310,7 @@ class Component extends DCLogic {
     const lines = s.cart.map((l) => {
       const p = byId[l.id];
       return {
-        name: p.name + (modOf(p, l.mod) ? ' · ' + modOf(p, l.mod).n : ''),
+        name: (['Квас', 'Лимонад', 'Сидр'].indexOf(p.kind) >= 0 && p.name.indexOf(p.kind) !== 0 ? p.kind + ' ' : '') + p.name + (modOf(p, l.mod) ? ' · ' + modOf(p, l.mod).n : ''),
         volText: p.unit === 'g' ? l.vol + '\u00a0г' : (p.unit === 'pc' ? '1\u00a0шт' : volText(l.vol)),
         qty: l.qty,
         sumText: fmt(priceOf(p, l.vol, l.mod) * l.qty),

@@ -169,7 +169,7 @@ export default {
       const rl = 'rl:' + o.phone.replace(/\D/g, '');
       if (await env.KV.get(rl)) return json({ error: 'Забагато замовлень поспіль. Зачекайте хвилину або зателефонуйте нам' }, 429);
       await env.KV.put(rl, '1', { expirationTtl: 60 });
-      const n = (Number(await env.KV.get('ordn')) || 0) + 1;
+      const n = Math.max(99, Number(await env.KV.get('ordn')) || 0) + 1;
       await env.KV.put('ordn', String(n));
       o.n = n;
       o.id = String(Date.now()) + '-' + n;
@@ -240,6 +240,19 @@ export default {
         if (!c || typeof c !== 'object' || !c.on || txt.length > 400000) return json({ error: 'bad' }, 400);
         await env.KV.put('catalog', JSON.stringify({ on: c.on, edits: c.edits || {}, tara: c.tara || {}, site: c.site || {}, tgOn: c.tgOn !== false }));
         return json({ ok: true });
+      }
+      if (url.pathname === '/api/admin/poster-price' && request.method === 'GET') {
+        const id = url.searchParams.get('id') || '';
+        if (!/^\d{1,8}$/.test(id)) return json({ error: 'bad id' }, 400);
+        try {
+          const r = await fetch('https://lion-beer-proxy.lionbeer-ua.workers.dev/api/menu.getProduct?product_id=' + id);
+          const j = await r.json();
+          const pr = j && j.response && j.response.price;
+          const raw = pr && (pr['1'] != null ? pr['1'] : Object.values(pr)[0]);
+          const n = Number(raw);
+          if (!isFinite(n) || n <= 0) return json({ error: 'no price' }, 502);
+          return json({ price: n / 100 }, 200, { 'Cache-Control': 'no-store' });
+        } catch (e) { return json({ error: 'poster unavailable' }, 502); }
       }
       if (url.pathname === '/api/admin/orders' && request.method === 'GET') {
         if (!env.KV) return json([], 200);

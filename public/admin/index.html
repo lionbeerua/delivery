@@ -378,6 +378,7 @@ body{background:#000}
 <label for="e-p">Ціна на сайті, ₴ ({{ed.unitHint}})</label>
 <input id="e-p" class="in" type="text" inputmode="decimal" value="{{ed.price}}" onInput="{{onEPrice}}">
 <span class="hint">У Poster: {{ed.posterPrice}}</span>
+<button class="act p" style="margin-top:10px;width:100%" onClick="{{syncPrice}}">{{syncPriceLabel}}</button>
 <button class="link" onClick="{{resetPrice}}">Повернути ціну з Poster</button>
 </div>
 <div class="fld"><label for="e-d">Опис</label><textarea id="e-d" class="in" placeholder="Смак, аромат, з чим пити" onInput="{{onEDesc}}">{{ed.desc}}</textarea></div>
@@ -676,9 +677,10 @@ class Component extends DCLogic {
     const rowOf = (p) => {
       const e = s.edits[p.i] || {};
       const price = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : p.p;
-      const changed = e.price !== undefined && e.price !== '' && price !== p.p;
+      const ppx = e.pp != null && e.pp !== '' ? Number(e.pp) : p.p;
+      const changed = e.price !== undefined && e.price !== '' && price !== ppx;
       let priceText = p.p === 0 ? 'Ціна в Poster: —' : (p.w ? fmt(price) + ' за 100 г' : fmt(price));
-      if (changed) priceText = 'На сайті: ' + fmt(price) + ' · у Poster: ' + fmt(p.p);
+      if (changed) priceText = 'На сайті: ' + fmt(price) + ' · у Poster: ' + fmt(ppx);
       return {
         name: e.name || p.n,
         isNew: !!s.newIds[p.i],
@@ -836,11 +838,32 @@ class Component extends DCLogic {
         title: 'Редагування товару',
         name: s.draft.name || '', price: s.draft.price || '', desc: s.draft.desc || '',
         str: s.draft.str || '', den: s.draft.den || '', prod: s.draft.prod || '',
-        posterPrice: cur.p === 0 ? '—' : fmt(cur.p),
+        posterPrice: (s.draft.pp != null && s.draft.pp !== '' ? Number(s.draft.pp) : cur.p) === 0 ? '—' : fmt(s.draft.pp != null && s.draft.pp !== '' ? Number(s.draft.pp) : cur.p),
         unitHint: cur.w ? 'за 100 г' : 'за одиницю в Poster'
       },
       onEName: dset('name'), onEPrice: dset('price'), onEDesc: dset('desc'), onEStr: dset('str'), onEDen: dset('den'), onEProd: dset('prod'),
-      resetPrice: () => this.setState({ draft: { ...this.state.draft, price: String(cur.p).replace('.', ',') } }),
+      resetPrice: () => this.setState({ draft: { ...this.state.draft, price: String(this.state.draft.pp != null && this.state.draft.pp !== '' ? this.state.draft.pp : cur.p).replace('.', ',') } }),
+      syncPriceLabel: s.pSyncing ? 'Перевіряю Poster…' : 'Синхронізувати ціну з Poster',
+      syncPrice: () => {
+        if (this.state.pSyncing) return;
+        const id = s.editId;
+        this.setState({ pSyncing: true });
+        fetch('/api/admin/poster-price?id=' + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' })
+          .then((r) => (r.ok ? r.json() : Promise.reject()))
+          .then((j) => {
+            const price = Number(j.price);
+            if (!isFinite(price) || price <= 0) throw 0;
+            const draft = { ...this.state.draft, price: String(price).replace('.', ','), pp: price };
+            const edits = { ...this.state.edits, [id]: { ...draft, preset: this.state.preset, name: (draft.name || '') === cur.n ? '' : draft.name } };
+            this.setState({ draft, edits, pSyncing: false, toast: 'Ціну оновлено з Poster: ' + fmt(price) });
+            this.saveAll();
+            setTimeout(() => { this.setState({ toast: '' }); }, 2200);
+          })
+          .catch(() => {
+            this.setState({ pSyncing: false, toast: 'Не вдалося отримати ціну з Poster' });
+            setTimeout(() => { this.setState({ toast: '' }); }, 2200);
+          });
+      },
       presets,
       modRows,
       addMod: () => setMods((a) => a.concat([{ n: '', p: '', on: true }])),
@@ -848,7 +871,7 @@ class Component extends DCLogic {
       newItems, hasNew: newItems.length > 0,
       sync, syncing: s.syncing, syncCls: s.syncing ? 'spin' : '', syncLabel: s.syncing ? 'Оновлюю з Poster…' : 'Синхронізувати з Poster', hasSyncMsg: s.syncMsg !== '', syncMsg: s.syncMsg,
       saveEdit: () => {
-        const edits = { ...this.state.edits, [s.editId]: { ...this.state.draft, preset: this.state.preset } };
+        const edits = { ...this.state.edits, [s.editId]: { ...this.state.draft, preset: this.state.preset, name: (this.state.draft.name || '') === cur.n ? '' : this.state.draft.name } };
         this.setState({ edits, drOpen: false });
         this.saveAll();
       },
