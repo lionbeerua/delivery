@@ -1008,6 +1008,7 @@ class Component extends DCLogic {
     flashId: null,
     bump: false,
     slide: 0,
+    banners: null,
     theme: '0',
     cat: 'drinks',
     q: '',
@@ -1031,10 +1032,14 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this._last = Date.now();
+    try {
+      fetch('/api/banners').then((r) => (r.ok ? r.json() : null)).then((list) => { if (Array.isArray(list) && list.length) this.setState({ banners: list, slide: 0 }); }).catch(() => {});
+    } catch (e) { /* без сервера лишається стандартний банер */ }
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     this._t = setInterval(() => {
       if (this.state.screen !== 'catalog' || document.hidden) { this._last = Date.now(); return; }
-      if (Date.now() - this._last >= 5000) { this._last = Date.now(); this.setState({ slide: (this.state.slide + 1) % 3 }); }
+      const n = Math.max(1, (this.state.banners && this.state.banners.length ? this.state.banners.filter((b) => b.on !== false && b.img).length : 1));
+      if (n > 1 && Date.now() - this._last >= 5000) { this._last = Date.now(); this.setState({ slide: (this.state.slide + 1) % n }); }
     }, 250);
   }
 
@@ -1299,11 +1304,14 @@ class Component extends DCLogic {
       toggle: () => this.setState({ menuSec: this.state.menuSec === m.id ? '' : m.id })
     }));
 
-    const SLIDES = [
+    const DEFAULT_SLIDES = [
       { isBrand: true, chip: '', title: '', sub: '', img: '/_blob/ph_banner1', pos: '50% 62%', clean: true },
       { isBrand: false, chip: 'Новинка', title: '[ВСТАВ назву новинки]', sub: '[ВСТАВ короткий опис]', img: IMG.wheat, pos: '50% 40%' },
       { isBrand: false, chip: 'Акція', title: '[ВСТАВ умови акції]', sub: '[ВСТАВ терміни та деталі]', img: IMG.lager, pos: '45% 50%' }
     ];
+    const SLIDES = (s.banners && s.banners.length)
+      ? s.banners.filter((b) => b.on !== false && b.img).map((b) => ({ isBrand: false, chip: b.kind || '', title: b.title || '', sub: b.sub || '', img: b.img, pos: '50% 50%', clean: !b.kind && !b.title && !b.sub }))
+      : DEFAULT_SLIDES.slice(0, 1);
     const goSlide = (i) => { this._last = Date.now(); this.setState({ slide: i }); };
 
     const socials = [
