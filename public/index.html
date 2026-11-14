@@ -1189,6 +1189,21 @@ class Component extends DCLogic {
         });
       }
     }
+    const DEFSC = [{ id: 'drinks', n: 'На кранах' }, { id: 'snacks', n: 'Снеки' }, { id: 'bottle', n: 'В пляшці' }, { id: 'sweet', n: 'Солоденьке' }];
+    const SC = (s.catalog && s.catalog.site && Array.isArray(s.catalog.site.cats) && s.catalog.site.cats.length) ? s.catalog.site.cats.filter((c) => c && c.id && String(c.n || '').trim()) : DEFSC;
+    const CURC = SC.find((c) => c.id === s.cat) ? s.cat : (SC[0] ? SC[0].id : 'drinks');
+    const UNITM = { beer: 'l', snack: 'g', piece: 'pc' };
+    PRODUCTS = PRODUCTS.map((p) => {
+      const e = (s.catalog && s.catalog.edits && s.catalog.edits[p.id]) || {};
+      const q = { ...p, cat0: p.cat };
+      if (e.sc && SC.find((c) => c.id === e.sc)) q.cat = e.sc;
+      const nu = UNITM[e.upre];
+      if (nu && nu !== q.unit) {
+        const pr = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : (q.unit === 'g' ? q.per100 : (q.unit === 'pc' ? q.pc : q.half));
+        q.unit = nu; q.half = pr; q.per100 = nu === 'g' ? pr : 0; q.pc = nu === 'pc' ? pr : 0;
+      }
+      return q;
+    });
     const FILTERS = [
       { id: 'all', label: 'Усі' },
       { id: 'lager', label: 'Світле' },
@@ -1247,7 +1262,7 @@ class Component extends DCLogic {
       const hay = (p.name + ' ' + (p.mods ? p.mods.map((m) => m.n).join(' ') : '') + ' ' + p.kind + ' ' + (GL[p.group] || '') + ' ' + ({ snacks: 'снеки закуски до пива', bottle: 'в пляшці пиво склянка', sweet: 'солоденьке солодощі шоколад', drinks: 'на кранах напої пиво на розлив' }[p.cat])).toLowerCase();
       return q.split(/\s+/).every((w) => hay.indexOf(w) >= 0);
     };
-    const inCat = (p) => p.cat === s.cat;
+    const inCat = (p) => p.cat === CURC;
     const shown = q ? PRODUCTS.filter(matches) : PRODUCTS.filter((p) => inCat(p) && (s.filter === 'all' || p.group === s.filter));
     const GP = [50, 100, 150, 200];
     const products = shown.map((p, idx) => {
@@ -1278,7 +1293,7 @@ class Component extends DCLogic {
         isOpen: s.openId === p.id,
         openCls: s.openId === p.id ? 'open' : '',
         desc: (p.meta && p.meta.desc) || 'Тут буде опис. Його додають в адмінці.',
-        hasMeters: p.cat === 'drinks' && ['str', 'bit', 'den'].some((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false),
+        hasMeters: (p.cat0 || p.cat) === 'drinks' && ['str', 'bit', 'den'].some((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false),
         hasVols: !isPc,
         meters: ['str', 'bit', 'den'].filter((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false).map((k) => {
           const mm = (p.meta && p.meta.m) || DEFAULT_M;
@@ -1332,19 +1347,22 @@ class Component extends DCLogic {
     const SNACK_F = [{ id: 'all', label: 'Усі' }, { id: 'fish', label: lbl('10', 'Риба') }, { id: 'squid', label: lbl('9', 'Кальмар') }, { id: 'meat', label: lbl('11', "М'ясо") }, { id: 'nuts', label: lbl('12', 'Горіхи') }];
     const present = {};
     PRODUCTS.forEach((p) => { present[p.group] = true; });
-    const filters = (s.cat === 'snacks' ? SNACK_F : (s.cat === 'drinks' ? FILTERS : [])).filter((f) => f.id === 'all' || present[f.id]).map((f) => ({
+    const filters = (CURC === 'snacks' ? SNACK_F : (CURC === 'drinks' ? FILTERS : [])).filter((f) => f.id === 'all' || present[f.id]).map((f) => ({
       label: f.label,
       cls: f.id === s.filter ? 'on' : '',
       active: f.id === s.filter,
       pick: () => this.setState({ filter: f.id })
     }));
-    const CATS = [['drinks', 'На кранах', 'ph_remeslo'], ['snacks', 'Снеки', 'snack-fish1'], ['bottle', 'В пляшці', 'ph_bot1'], ['sweet', 'Солоденьке', 'ph_sw1']];
+    const BIMG = { drinks: 'ph_remeslo', snacks: 'snack-fish1', bottle: 'ph_bot1', sweet: 'ph_sw1' };
     const CPOS = { drinks: '50% 28%', snacks: '50% 40%', bottle: '50% 38%', sweet: '30% 55%' };
-    const cats = CATS.map((c) => ({
-      label: c[1], cls: s.cat === c[0] ? 'on' : '', active: s.cat === c[0], img: '/_blob/' + c[2], pos: CPOS[c[0]],
-      count: PRODUCTS.filter((p) => p.cat === c[0]).length + ' поз.',
-      pick: () => this.setState({ cat: c[0], filter: 'all', openId: null })
-    }));
+    const cats = SC.map((c) => {
+      const first = PRODUCTS.find((p) => p.cat === c.id);
+      return {
+        label: c.n, cls: CURC === c.id ? 'on' : '', active: CURC === c.id, img: BIMG[c.id] ? '/_blob/' + BIMG[c.id] : (first && first.img ? first.img : '/_blob/00f3e922350e31d8b5add0ca920b04e8'), pos: CPOS[c.id] || '50% 40%',
+        count: PRODUCTS.filter((p) => p.cat === c.id).length + ' поз.',
+        pick: () => this.setState({ cat: c.id, filter: 'all', openId: null })
+      };
+    });
 
 
     const lines = s.cart.map((l) => {
@@ -1449,7 +1467,7 @@ class Component extends DCLogic {
       cats, q: s.q, hasQ: q !== '', noQ: q === '',
       onQ: (e) => this.setState({ q: e.target.value }),
       clearQ: () => this.setState({ q: '' }),
-      secTitle: q ? 'Результати пошуку' : { drinks: 'На кранах', snacks: 'Снеки', bottle: 'В пляшці', sweet: 'Солоденьке' }[s.cat],
+      secTitle: q ? 'Результати пошуку' : ((SC.find((c) => c.id === CURC) || {}).n || ''),
       hasChips: filters.length > 1,
       noResults: q !== '' && shown.length === 0,
       socials,
