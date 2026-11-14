@@ -399,7 +399,8 @@ body{background:#000}
 <button class="link" onClick="{{resetPrice}}">Повернути ціну з Poster</button>
 </div>
 <div class="fld"><label for="e-d">Опис</label><textarea id="e-d" class="in" placeholder="Смак, аромат, з чим пити" onInput="{{onEDesc}}">{{ed.desc}}</textarea></div>
-<sc-if value="{{ed.isBeerCat}}" hint-placeholder-val="{{ true }}">
+<div class="fld"><div class="mrow"><span class="mname">Рівні: міцність, гіркота, щільність</span><input class="sw" type="checkbox" checked="{{ed.mOn}}" onChange="{{toggleM}}" aria-label="Показувати рівні"></div><span class="hint">Потрібно тільки для пива. Для інших товарів лишайте вимкненим.</span></div>
+<sc-if value="{{ed.mOn}}" hint-placeholder-val="{{ false }}">
 <div>
 <div class="fld"><label>Рівні для пива</label><span class="hint">Вмикайте лише потрібне. Для сидру чи просекко можна обрати тільки міцність.</span></div>
 <sc-for list="{{metrics}}" as="m" hint-placeholder-count="3">
@@ -799,7 +800,7 @@ class Component extends DCLogic {
           const ee = this.state.edits[p.i] || {};
           this.setState({
             editId: p.i, drOpen: true,
-            draft: { img: ee.img || '', sc: ee.sc || '', mods: ee.mods || (DEFMODS[p.i] || []).map((n) => ({ n, p: '', on: true })), name: ee.name || p.n, price: ee.price !== undefined && ee.price !== '' ? ee.price : String(this.baseP(p)).replace('.', ','), desc: ee.desc || '', m: ee.m || (p.c === '13' ? { str: { on: true, v: '', l: 0 }, bit: { on: true, v: '', l: 0 }, den: { on: true, v: '', l: 0 } } : JSON.parse(JSON.stringify(DEFM))) },
+            draft: { mOn: ee.mOn !== undefined ? !!ee.mOn : (this.defCat(p) === 'drinks' && this.isBaked(p.i)), img: ee.img || '', sc: ee.sc || '', mods: ee.mods || (DEFMODS[p.i] || []).map((n) => ({ n, p: '', on: true })), name: ee.name || p.n, price: ee.price !== undefined && ee.price !== '' ? ee.price : String(this.baseP(p)).replace('.', ','), desc: ee.desc || '', m: ee.m || (p.c === '13' ? { str: { on: true, v: '', l: 0 }, bit: { on: true, v: '', l: 0 }, den: { on: true, v: '', l: 0 } } : JSON.parse(JSON.stringify(DEFM))) },
             preset: ee.upre || this.defPreset(p)
           });
         }
@@ -959,7 +960,7 @@ class Component extends DCLogic {
       ed: {
         title: 'Редагування товару',
         img: s.draft.img || '', hasImg: !!s.draft.img,
-        isBeerCat: ['13', '15'].indexOf(cur.c) >= 0,
+        mOn: !!s.draft.mOn,
         name: s.draft.name || '', price: s.draft.price || '', desc: s.draft.desc || '',
         str: s.draft.str || '', den: s.draft.den || '', prod: s.draft.prod || '',
         posterPrice: cur.p === 0 ? '—' : fmt(cur.p),
@@ -970,6 +971,7 @@ class Component extends DCLogic {
       pickPhoto: () => { const el = document.getElementById('pf'); if (el) el.click(); },
       onPhoto: (e) => { const f = e.target.files && e.target.files[0]; this.uploadPhoto(f); e.target.value = ''; },
       clearPhoto: () => { const id = s.editId; const draft = { ...this.state.draft, img: '' }; this.setState({ draft, edits: { ...this.state.edits, [id]: { ...draft, upre: this.presetToSave() } } }); this.saveAll(); },
+      toggleM: () => this.setState({ draft: { ...this.state.draft, mOn: !this.state.draft.mOn } }),
       resetPrice: () => this.setState({ draft: { ...this.state.draft, price: String(cur.p).replace('.', ',') } }),
       syncPriceLabel: s.pSyncing ? 'Перевіряю Poster…' : 'Синхронізувати ціну з Poster',
       syncPrice: () => {

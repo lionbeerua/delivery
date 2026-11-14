@@ -1195,7 +1195,7 @@ class Component extends DCLogic {
     const UNITM = { beer: 'l', snack: 'g', piece: 'pc' };
     PRODUCTS = PRODUCTS.map((p) => {
       const e = (s.catalog && s.catalog.edits && s.catalog.edits[p.id]) || {};
-      const q = { ...p, cat0: p.cat };
+      const q = { ...p, cat0: p.cat, mOn: e.mOn !== undefined ? !!e.mOn : (p.cat === 'drinks' && PRODUCTS0.some((x) => x.id === p.id)) };
       if (e.sc && SC.find((c) => c.id === e.sc)) q.cat = e.sc;
       const nu = UNITM[e.upre];
       if (nu && nu !== q.unit) {
@@ -1293,7 +1293,7 @@ class Component extends DCLogic {
         isOpen: s.openId === p.id,
         openCls: s.openId === p.id ? 'open' : '',
         desc: (p.meta && p.meta.desc) || 'Тут буде опис. Його додають в адмінці.',
-        hasMeters: (p.cat0 || p.cat) === 'drinks' && ['str', 'bit', 'den'].some((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false),
+        hasMeters: !!p.mOn && ['str', 'bit', 'den'].some((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false),
         hasVols: !isPc,
         meters: ['str', 'bit', 'den'].filter((k) => (((p.meta && p.meta.m) || DEFAULT_M)[k] || {}).on !== false).map((k) => {
           const mm = (p.meta && p.meta.m) || DEFAULT_M;
