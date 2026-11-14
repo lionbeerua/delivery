@@ -149,6 +149,31 @@ async function listOrders(env, limit) {
   return out;
 }
 
+// ---------- Меню з Poster ----------
+const POSTER = 'https://lion-beer-proxy.lionbeer-ua.workers.dev/api/';
+const TARA_IDS = { '60': 0.5, '61': 1, '62': 1.5, '63': 2, '64': 3 };
+
+async function loadMenu(env, fresh) {
+  if (env.KV && !fresh) {
+    const c = await env.KV.get('menu', 'json');
+    if (c && Date.now() - c.t < 10 * 60 * 1000) return c;
+  }
+  const [pr, ct] = await Promise.all([
+    fetch(POSTER + 'menu.getProducts').then((r) => r.json()),
+    fetch(POSTER + 'menu.getCategories').then((r) => r.json())
+  ]);
+  const prods = (pr.response || []).filter((x) => String(x.hidden) !== '1').map((x) => {
+    const pp = x.price && (x.price['1'] != null ? x.price['1'] : Object.values(x.price)[0]);
+    return { i: String(x.product_id), c: String(x.menu_category_id), n: String(x.product_name || ''), p: (Number(pp) || 0) / 100, w: String(x.weight_flag) === '1' ? 1 : 0 };
+  });
+  const tara = {};
+  prods.forEach((x) => { if (TARA_IDS[x.i] && x.p > 0) tara[TARA_IDS[x.i]] = x.p; });
+  const cats = (ct.response || []).filter((x) => String(x.category_hidden) !== '1').map((x) => ({ id: String(x.category_id), n: String(x.category_name), parent: String(x.parent_category) }));
+  const out = { t: Date.now(), prods, cats, tara };
+  if (env.KV && prods.length > 50) await env.KV.put('menu', JSON.stringify(out));
+  return out;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -160,6 +185,10 @@ export default {
       const buf = await env.KV.get('img:' + im[1], 'arrayBuffer');
       if (!buf) return new Response('Не знайдено', { status: 404 });
       return new Response(buf, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable' } });
+    }
+    if (url.pathname === '/api/menu' && request.method === 'GET') {
+      try { return json(await loadMenu(env, false), 200, { 'Cache-Control': 'public, max-age=60' }); }
+      catch (e) { return json({ error: 'menu unavailable' }, 502); }
     }
     // Нове замовлення від клієнта
     if (url.pathname === '/api/order' && request.method === 'POST') {
@@ -240,6 +269,10 @@ export default {
         if (!c || typeof c !== 'object' || !c.on || txt.length > 400000) return json({ error: 'bad' }, 400);
         await env.KV.put('catalog', JSON.stringify({ on: c.on, edits: c.edits || {}, tara: c.tara || {}, site: c.site || {}, tgOn: c.tgOn !== false }));
         return json({ ok: true });
+      }
+      if (url.pathname === '/api/admin/menu' && request.method === 'GET') {
+        try { return json(await loadMenu(env, true), 200, { 'Cache-Control': 'no-store' }); }
+        catch (e) { return json({ error: 'poster unavailable' }, 502); }
       }
       if (url.pathname === '/api/admin/poster-price' && request.method === 'GET') {
         const id = url.searchParams.get('id') || '';

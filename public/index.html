@@ -1017,6 +1017,7 @@ class Component extends DCLogic {
     orderNo: '',
     banners: null,
     catalog: null,
+    menu: null,
     theme: '0',
     cat: 'drinks',
     q: '',
@@ -1041,6 +1042,7 @@ class Component extends DCLogic {
   componentDidMount() {
     this._last = Date.now();
     try {
+      fetch('/api/menu').then((r) => (r.ok ? r.json() : null)).then((m) => { if (m && m.prods) this.setState({ menu: m }); }).catch(() => {});
       fetch('/api/catalog').then((r) => (r.ok ? r.json() : null)).then((c) => { if (c && c.on) this.setState({ catalog: c }); }).catch(() => {});
       fetch('/api/banners').then((r) => (r.ok ? r.json() : null)).then((list) => { if (Array.isArray(list) && list.length) this.setState({ banners: list, slide: 0 }); }).catch(() => {});
     } catch (e) { /* без сервера лишається стандартний банер */ }
@@ -1151,6 +1153,41 @@ class Component extends DCLogic {
         }
         return q;
       });
+      const known = {};
+      PRODUCTS0.forEach((p) => { known[p.id] = true; });
+      const MN = s.menu;
+      if (MN && MN.prods) {
+        const SUBK = { '9': ['Кальмар', 'squid'], '10': ['Риба', 'fish'], '11': ["М'ясо", 'meat'], '12': ['Горіхи', 'nuts'] };
+        const LBX = (C.site && C.site.labels) || {};
+        MN.prods.forEach((m) => {
+          if (!C.on[m.i] || known[m.i]) return;
+          const e = (C.edits && C.edits[m.i]) || {};
+          const ep = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : 0;
+          const pr = ep > 0 ? ep : m.p;
+          if (!(pr > 0)) return;
+          let nm = m.n.replace(/\s+(0[.,]\d+|\d+)\s*(л|мл|l|ml)\.?$/i, '').replace(/\s+(з\/б|з\.б\.?)$/i, '').trim();
+          let kind = '', unit = 'pc', cat = 'snacks', group = 'other';
+          const lead = nm.match(/^(\S+)\s+на розлив\s+/i);
+          if (m.c === '13') { cat = 'drinks'; unit = 'l'; kind = lead ? lead[1] : 'Напої'; nm = nm.replace(/^(\S+)\s+на розлив\s+/i, ''); group = ({ 'Пиво': 'other', 'Вино': 'other', 'Сидр': 'cider', 'Квас': 'soft', 'Лимонад': 'soft' })[kind] || 'other'; }
+          else if (m.c === '15') { cat = 'bottle'; kind = 'Пиво в пляшці'; group = 'bottle'; }
+          else if (m.c === '7') { cat = 'bottle'; kind = 'Напої'; group = 'bottle'; }
+          else if (SUBK[m.c]) { cat = 'snacks'; kind = (LBX[m.c] && String(LBX[m.c]).trim()) || SUBK[m.c][0]; group = SUBK[m.c][1]; unit = m.w ? 'g' : 'pc'; }
+          else if (m.c === '4') { cat = 'snacks'; kind = 'Снеки'; group = 'nuts'; }
+          else return;
+          const arr = CROPS[group] || CROPS.other; const c0 = arr[0];
+          const q = {
+            mods: (e.mods && e.mods.length) ? null : null, id: m.i, name: e.name || nm, kind, group, half: pr, unit, per100: unit === 'g' ? pr : 0, pc: unit === 'pc' ? pr : 0, cat, meta: null,
+            img: (e.img && /^\/u\/[0-9a-f]{12}$/.test(e.img)) ? e.img : IMG[c0[0]], imgStyle: 'object-position:50% 50%'
+          };
+          if (e.desc) q.meta = { desc: e.desc, ...(e.m ? { m: e.m } : {}) };
+          if (e.badge) BADGES[m.i] = e.badge;
+          if (e.mods) {
+            const ms = e.mods.filter((x) => x.on !== false && String(x.n || '').trim()).map((x) => ({ k: x.n.trim(), n: x.n.trim(), p: x.p !== '' && x.p != null && Number(String(x.p).replace(',', '.')) > 0 ? Number(String(x.p).replace(',', '.')) : undefined }));
+            q.mods = ms.length ? ms : null;
+          }
+          PRODUCTS.push(q);
+        });
+      }
     }
     const FILTERS = [
       { id: 'all', label: 'Усі' },
