@@ -210,6 +210,28 @@ body{background:#000}
 </div>
 </div>
 </sc-if>
+<div class="note" style="margin:6px 4px 8px;font-weight:700;color:var(--tx)">На сайті по категоріях <span style="font-weight:500;color:var(--mu)">· те, що зараз бачать клієнти</span></div>
+<sc-for list="{{scView}}" as="c" hint-placeholder-count="4">
+<div class="cat lg {{c.cls}}">
+<div class="cat-h">
+<button class="cat-b" onClick="{{c.expand}}" aria-expanded="{{c.isOpen}}">
+<svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+<span><div class="cat-n">{{c.name}}</div><div class="cat-s">{{c.status}}</div></span>
+</button>
+</div>
+<div class="cat-body"><div class="cat-in"><div class="plist">
+<sc-for list="{{c.items}}" as="p" hint-placeholder-count="2">
+<div class="row">
+<input class="sw" type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}" aria-label="Показувати на сайті">
+<div class="row-t"><div class="row-n">{{p.name}}</div><div class="row-p">{{p.priceText}}</div></div>
+<button class="edit" onClick="{{p.edit}}">Змінити</button>
+</div>
+</sc-for>
+<sc-if value="{{c.empty}}" hint-placeholder-val="{{ false }}"><div class="empty">Тут поки нічого немає. Додайте товари нижче, зі списку Poster, і оберіть цю категорію в їх налаштуваннях.</div></sc-if>
+</div></div></div>
+</div>
+</sc-for>
+<div class="note" style="margin:22px 4px 8px;font-weight:700;color:var(--tx)">Усі товари з Poster <span style="font-weight:500;color:var(--mu)">· звідси вмикаємо нові на сайт</span></div>
 <sc-for list="{{cats}}" as="c" hint-placeholder-count="3">
 <div>
 <sc-if value="{{c.groupTitle}}" hint-placeholder-val="{{ false }}"><div class="note" style="margin:18px 4px 8px;font-weight:700;color:var(--tx)">Снеки Вагові <span style="font-weight:500;color:var(--mu)">· групи з Poster</span></div></sc-if>
@@ -846,6 +868,19 @@ class Component extends DCLogic {
     const curProd = D.prods.find((p) => p.i === s.editId);
     const selSC = s.draft.sc || (curProd ? this.defCat(curProd) : '');
     const scats = curSC.map((c) => ({ label: c.n || '—', cls: selSC === c.id ? 'on' : '', active: selSC === c.id, pick: () => this.setState({ draft: { ...this.state.draft, sc: c.id } }) }));
+    const effCat = (p) => (s.edits[p.i] && s.edits[p.i].sc) || this.defCat(p);
+    const scIds = curSC.map((c) => c.id);
+    const viewCats = curSC.map((c) => ({ id: c.id, n: c.n || '—' }));
+    if (D.prods.some((p) => on[p.i] && scIds.indexOf(effCat(p)) < 0)) viewCats.push({ id: '_none', n: 'Без категорії (не видно на сайті)' });
+    const scView = viewCats.map((c) => {
+      const items = D.prods.filter((p) => on[p.i] && (c.id === '_none' ? scIds.indexOf(effCat(p)) < 0 : effCat(p) === c.id));
+      const open = s.openSc === c.id;
+      return {
+        name: c.n, status: items.length ? items.length + ' на сайті' : 'Порожньо', cls: open ? 'open' : '', isOpen: open, empty: items.length === 0,
+        expand: () => this.setState({ openSc: open ? '' : c.id }),
+        items: open ? items.map(rowOf) : []
+      };
+    });
     const sync = () => {
       this.setState({ syncing: true, syncMsg: '' });
       fetch('/api/admin/menu', { credentials: 'same-origin', cache: 'no-store' })
@@ -998,7 +1033,7 @@ class Component extends DCLogic {
       modRows,
       addMod: () => setMods((a) => a.concat([{ n: '', p: '', on: true }])),
       badges,
-      newItems, hasNew: newItems.length > 0, siteCats, addSiteCat, scats,
+      scView, newItems, hasNew: newItems.length > 0, siteCats, addSiteCat, scats,
       sync, syncing: s.syncing, syncCls: s.syncing ? 'spin' : '', syncLabel: s.syncing ? 'Оновлюю з Poster…' : 'Синхронізувати з Poster', hasSyncMsg: s.syncMsg !== '', syncMsg: s.syncMsg,
       saveEdit: () => {
         const edits = { ...this.state.edits, [s.editId]: { ...this.state.draft, upre: this.presetToSave(), name: (this.state.draft.name || '') === cur.n ? '' : this.state.draft.name } };
