@@ -567,7 +567,7 @@ function syncAttrs(oo,nn){
     if(t==='input'&&oo.checked!==nn.checked) oo.checked=nn.checked;
   }
   if('disabled' in oo && oo.disabled!==nn.disabled) oo.disabled=nn.disabled;
-  oo.onclick=nn.onclick; oo.oninput=nn.oninput; oo.onchange=nn.onchange; oo.ontouchstart=nn.ontouchstart; oo.ontouchend=nn.ontouchend;
+  oo.onclick=nn.onclick; oo.oninput=nn.oninput; oo.onchange=nn.onchange; oo.ontouchstart=nn.ontouchstart; oo.ontouchend=nn.ontouchend; oo.ondragstart=nn.ondragstart; oo.ondragover=nn.ondragover; oo.ondrop=nn.ondrop; oo.ondragend=nn.ondragend;
 }
 function patch(oldP,newP){
   var o=Array.prototype.slice.call(oldP.childNodes), n=Array.prototype.slice.call(newP.childNodes), i;
@@ -953,8 +953,15 @@ class Component extends DCLogic {
       const items0 = D.prods.filter((p) => on[p.i] && (c.id === '_none' ? scIds.indexOf(effCat(p)) < 0 : effCat(p) === c.id));
       const items = items0.map((p, k) => ({ p, k })).sort((x, y) => { const ix = ordL.indexOf(x.p.i), iy = ordL.indexOf(y.p.i); return (ix < 0 ? 1e6 + this.defRank(x.p, x.k) : ix) - (iy < 0 ? 1e6 + this.defRank(y.p, y.k) : iy); }).map((x) => x.p);
       const ids = items.map((p) => p.i);
-      const saveOrder = (arr) => this.setState({ site: { ...this.state.site, order: { ...((this.state.site && this.state.site.order) || {}), [c.id]: arr } } });
-      const moveTo = (from, to) => { if (from === to || from < 0 || to < 0 || to >= ids.length) return; const arr = ids.slice(); const [x] = arr.splice(from, 1); arr.splice(to, 0, x); saveOrder(arr); };
+      this._scIds = this._scIds || {};
+      this._scIds[c.id] = ids;
+      const moveTo = (from, to) => {
+        const cur = this._scIds[c.id] || [];
+        if (from === to || from < 0 || to < 0 || to >= cur.length) return;
+        const arr = cur.slice(); const [x] = arr.splice(from, 1); arr.splice(to, 0, x);
+        const st = this.state.site || {};
+        this.setState({ site: { ...st, order: { ...(st.order || {}), [c.id]: arr } } });
+      };
       const open = s.openSc === c.id;
       const noPrice = (arr) => arr.filter((p) => !hasPrice(p)).length;
       return {
@@ -963,12 +970,31 @@ class Component extends DCLogic {
         items: open ? items.map((p, i) => ({
           ...rowOf(p),
           priceText: hasPrice(p) ? rowOf(p).priceText : 'Немає ціни, на сайті не видно',
-          up: () => moveTo(i, i - 1), down: () => moveTo(i, i + 1),
-          dcls: this._drag === p.i ? 'dragging' : (this._over === p.i && this._drag && this._drag !== p.i ? 'dover' : ''),
-          dstart: (e) => { this._drag = p.i; try { e.dataTransfer.setData('text/plain', p.i); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* ignore */ } },
-          dover: (e) => { if (!this._drag) return; e.preventDefault(); if (this._over !== p.i) { this._over = p.i; this.forceUpdate(); } },
-          ddrop: (e) => { if (!this._drag) return; e.preventDefault(); const f = ids.indexOf(this._drag); this._drag = null; this._over = null; moveTo(f, i); this.forceUpdate(); },
-          dend: () => { this._drag = null; this._over = null; this.forceUpdate(); }
+          up: () => moveTo((this._scIds[c.id] || []).indexOf(p.i), (this._scIds[c.id] || []).indexOf(p.i) - 1),
+          down: () => moveTo((this._scIds[c.id] || []).indexOf(p.i), (this._scIds[c.id] || []).indexOf(p.i) + 1),
+          dcls: '',
+          dstart: (e) => {
+            if (e.target !== e.currentTarget) return;
+            this._drag = p.i;
+            try { e.dataTransfer.setData('text/plain', p.i); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* ignore */ }
+            const row = e.currentTarget; setTimeout(() => row.classList.add('dragging'), 0);
+          },
+          dover: (e) => {
+            if (!this._drag) return;
+            e.preventDefault();
+            document.querySelectorAll('.row.dover').forEach((x) => { if (x !== e.currentTarget) x.classList.remove('dover'); });
+            if (this._drag !== p.i) e.currentTarget.classList.add('dover');
+          },
+          ddrop: (e) => {
+            if (!this._drag) return;
+            e.preventDefault();
+            const cur = this._scIds[c.id] || [];
+            const f = cur.indexOf(this._drag), t = cur.indexOf(p.i);
+            this._drag = null;
+            document.querySelectorAll('.row.dover,.row.dragging').forEach((x) => x.classList.remove('dover', 'dragging'));
+            moveTo(f, t);
+          },
+          dend: () => { this._drag = null; document.querySelectorAll('.row.dover,.row.dragging').forEach((x) => x.classList.remove('dover', 'dragging')); }
         })) : []
       };
     });

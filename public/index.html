@@ -966,7 +966,7 @@ function syncAttrs(oo,nn){
     if(t==='input'&&oo.checked!==nn.checked) oo.checked=nn.checked;
   }
   if('disabled' in oo && oo.disabled!==nn.disabled) oo.disabled=nn.disabled;
-  oo.onclick=nn.onclick; oo.oninput=nn.oninput; oo.onchange=nn.onchange; oo.ontouchstart=nn.ontouchstart; oo.ontouchend=nn.ontouchend;
+  oo.onclick=nn.onclick; oo.oninput=nn.oninput; oo.onchange=nn.onchange; oo.ontouchstart=nn.ontouchstart; oo.ontouchend=nn.ontouchend; oo.ondragstart=nn.ondragstart; oo.ondragover=nn.ondragover; oo.ondrop=nn.ondrop; oo.ondragend=nn.ondragend;
 }
 function patch(oldP,newP){
   var o=Array.prototype.slice.call(oldP.childNodes), n=Array.prototype.slice.call(newP.childNodes), i;
