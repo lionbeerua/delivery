@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B0A08">
+<title>Lion Beer Адмінка</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0A08;color-scheme:dark}
+*{box-sizing:border-box}
+button,input,textarea{font-family:'Montserrat',system-ui,sans-serif}
+button{-webkit-tap-highlight-color:transparent;transition:transform .35s cubic-bezier(.34,1.56,.64,1),background-color .25s,border-color .25s,color .25s}
+button:active{transform:scale(.96);transition-duration:.12s}
+.app{--gold:#F2C142;--line:rgba(255,245,225,.1);--tx:#F8F3E9;--mu:#B3AA97;--ink:#1B1403;position:relative;min-height:100vh;background:#0B0A08;color:var(--tx);font-family:'Montserrat',system-ui,sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:60px;overflow-x:hidden}
+.orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.4}
+.o1{width:320px;height:320px;background:#F2C142;top:-100px;left:-100px;animation:d1 18s ease-in-out infinite alternate}
+.o2{width:300px;height:300px;background:#E78531;bottom:0;right:-120px;opacity:.28;animation:d2 21s ease-in-out infinite alternate}
+@keyframes d1{to{transform:translate(120px,140px)}}
+@keyframes d2{to{transform:translate(-120px,-120px)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.layer{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:0 14px}
+.lg{position:relative;background:linear-gradient(140deg,rgba(255,255,255,.15),rgba(255,255,255,.04) 60%,rgba(255,255,255,.08));backdrop-filter:blur(22px) saturate(190%);-webkit-backdrop-filter:blur(22px) saturate(190%);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.4),0 12px 30px rgba(0,0,0,.35)}
+.lg::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(120% 70% at 12% -10%,rgba(255,255,255,.22),transparent 55%)}
+.head{display:flex;align-items:center;justify-content:space-between;height:72px}
+.head h1{margin:0;font-size:24px;font-weight:900;letter-spacing:-.04em}
+.back{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border-radius:22px;color:var(--tx);text-decoration:none;font-weight:700;font-size:13px}
+.tabs{display:flex;gap:6px;padding:5px;border-radius:26px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;min-width:max-content;height:44px;padding:0 16px;border-radius:21px;border:0;background:transparent;color:var(--mu);font-weight:700;font-size:14px;cursor:pointer}
+.tab.on{background:var(--gold);color:var(--ink);box-shadow:0 6px 18px rgba(242,193,66,.3)}
+.pane{animation:rise .6s cubic-bezier(.2,.8,.2,1) both;margin-top:14px}
+.note{margin:0 2px 12px;font-size:13px;line-height:1.5;color:var(--mu);font-weight:500}
+.search{width:100%;height:52px;border-radius:26px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.3);color:var(--tx);padding:0 20px;font-size:16px;font-weight:500;outline:none;margin-bottom:12px}
+.search:focus,.in:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(242,193,66,.18)}
+.search::placeholder,.in::placeholder{color:#8f8672}
+.cat{border-radius:26px;margin-bottom:10px;overflow:hidden}
+.cat-h{display:flex;align-items:center;gap:12px;padding:10px 14px 10px 8px;min-height:68px}
+.cat-b{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;color:var(--tx);text-align:left;cursor:pointer;padding:6px 4px;min-height:48px}
+.cat-b:active{transform:none;opacity:.85}
+.cat-n{font-weight:800;font-size:16px;letter-spacing:-.02em}
+.cat-s{font-size:12px;color:var(--mu);margin-top:3px;font-weight:500}
+.chev{flex:none;transition:transform .5s cubic-bezier(.34,1.56,.64,1);color:var(--mu)}
+.cat.open .chev{transform:rotate(90deg)}
+.cat-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .55s cubic-bezier(.32,.72,0,1)}
+.cat.open .cat-body{grid-template-rows:1fr}
+.cat-in{overflow:hidden}
+.plist{padding:0 8px 8px}
+.row{display:flex;align-items:center;gap:12px;padding:8px 8px;border-top:1px solid rgba(255,255,255,.08);min-height:60px}
+.row-t{flex:1;min-width:0}
+.row-n{font-size:14px;font-weight:600;line-height:1.3}
+.row-p{font-size:12px;color:var(--mu);margin-top:3px;font-weight:500}
+.row-p b{color:var(--gold);font-weight:700}
+.edit{flex:none;height:44px;padding:0 16px;border-radius:22px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:var(--tx);font-weight:700;font-size:13px;cursor:pointer}
+.sw{appearance:none;-webkit-appearance:none;flex:none;width:52px;height:32px;border-radius:16px;background:rgba(255,255,255,.14);position:relative;cursor:pointer;margin:0;transition:background .3s;border:0;outline-offset:3px}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4);transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.sw:checked{background:var(--gold)}
+.sw:checked::after{transform:translateX(20px)}
+.empty{padding:26px 8px;text-align:center;color:var(--mu);font-size:14px;line-height:1.5}
+
+.scrim{position:fixed;inset:0;border:0;padding:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;visibility:hidden;transition:opacity .4s,visibility 0s .4s;z-index:40;cursor:default}
+.scrim.open{opacity:1;visibility:visible;transition:opacity .4s}
+.scrim:active{transform:none}
+.dr{position:fixed;left:50%;bottom:0;z-index:50;width:100%;max-width:560px;max-height:92%;overflow-y:auto;border-radius:34px 34px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));background:linear-gradient(150deg,rgba(54,49,40,.92),rgba(20,18,14,.95));transform:translate(-50%,106%);visibility:hidden;transition:transform .65s cubic-bezier(.32,.72,0,1),visibility 0s .65s}
+.dr.open{transform:translate(-50%,0);visibility:visible;transition:transform .65s cubic-bezier(.32,.72,0,1)}
+.grab{width:42px;height:5px;border-radius:3px;background:rgba(255,255,255,.3);margin:0 auto 8px}
+.dr-h{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px}
+.dr-h h2{margin:0;font-size:20px;font-weight:900;letter-spacing:-.03em;line-height:1.2}
+.iconbtn{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:var(--tx);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+.fld{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+.fld label{font-size:13px;color:var(--mu);font-weight:500}
+.fld .hint{font-size:12px;color:var(--mu);font-weight:500}
+.in{width:100%;height:52px;border-radius:16px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.3);color:var(--tx);padding:0 16px;font-size:16px;font-weight:500;outline:none;transition:border-color .25s,box-shadow .25s}
+textarea.in{height:108px;padding:14px 16px;resize:vertical;line-height:1.5}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{height:44px;padding:0 16px;border-radius:22px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#E4DCCB;font-weight:600;font-size:13px;cursor:pointer}
+.chip.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:800}
+.drop{display:flex;align-items:center;justify-content:center;gap:10px;height:96px;border-radius:20px;border:1.5px dashed rgba(255,255,255,.3);background:rgba(255,255,255,.04);color:var(--mu);font-weight:600;font-size:14px;cursor:pointer;width:100%}
+.cta{width:100%;height:56px;border-radius:28px;border:0;background:var(--gold);color:var(--ink);font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 10px 26px rgba(242,193,66,.3);margin-top:18px}
+.link{background:none;border:0;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;padding:0;height:36px;text-align:left}
+.link:active{transform:none;opacity:.8}
+
+.blk{border-radius:26px;padding:18px;margin-bottom:12px}
+.blk h2{margin:0 0 12px;font-size:16px;font-weight:800;letter-spacing:-.02em}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.tile{border-radius:22px;padding:16px}
+.tile span{font-size:12px;color:var(--mu);font-weight:500}
+.tile b{display:block;margin-top:8px;font-size:30px;font-weight:900;letter-spacing:-.04em;color:#6f675a}
+.bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:6px}
+.bars i{flex:1;border-radius:8px 8px 4px 4px;border:1.5px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.04)}
+.ord{border-radius:26px;padding:18px;margin-bottom:12px}
+.ord-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.badge{height:30px;padding:0 13px;border-radius:15px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;background:rgba(255,255,255,.12)}
+.badge.new{background:var(--gold);color:var(--ink)}
+.badge.acc{background:#7CB8FF;color:#07203B}
+.badge.done{background:#7CE08A;color:#06260E}
+.badge.cancel{background:#FF9B8F;color:#3A0A04}
+.sample{font-size:12px;color:var(--mu);font-weight:600}
+.ln{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:5px 0;line-height:1.35}
+.ln span:first-child{color:var(--mu);font-weight:500}
+.ln span:last-child{font-weight:700;text-align:right}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.act{height:48px;border-radius:24px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:var(--tx);font-weight:700;font-size:13px;cursor:pointer;padding:0 6px}
+.act.p{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.tg{display:flex;align-items:center;gap:14px;padding:6px 0}
+.tg-t{flex:1;font-size:14px;font-weight:600;line-height:1.35}
+.tg-t small{display:block;margin-top:3px;font-size:12px;color:var(--mu);font-weight:500}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,160%);z-index:70;height:52px;padding:0 24px;border-radius:26px;display:flex;align-items:center;font-weight:700;font-size:14px;transition:transform .6s cubic-bezier(.34,1.5,.5,1);white-space:nowrap}
+.toast.show{transform:translate(-50%,0)}
+.mbox{border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:6px 14px 14px;margin-top:10px;background:rgba(255,255,255,.04)}
+.mrow{display:flex;justify-content:space-between;align-items:center;min-height:50px}
+.mname{font-weight:800;font-size:15px}
+.mfields{display:grid;gap:12px}
+.lv5{display:flex;gap:6px}
+.lvb{flex:1;height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#E4DCCB;font-weight:700;font-size:15px;cursor:pointer;padding:0}
+.lvb.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:800}
+.pv{display:flex;gap:5px;margin-top:10px}
+.pv i{flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,.14);transition:background .3s}
+.pv i.on{background:var(--gold)}
+@media (hover:hover){.edit:hover,.chip:hover:not(.on),.act:hover,.iconbtn:hover{border-color:rgba(255,255,255,.4)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+
+.sync{margin:0 0 14px}
+.syncb{width:100%;height:52px;border-radius:26px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+.syncb:disabled{opacity:.6;cursor:wait}
+.syncb svg.spin{animation:spinr .9s linear infinite}
+@keyframes spinr{to{transform:rotate(360deg)}}
+.syncmsg{margin:10px 2px 0;font-size:13px;line-height:1.5;color:var(--tx);font-weight:500}
+.newtag{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;background:var(--gold);color:var(--ink);font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle}
+/* простий чорний інтерфейс без скла */
+.orbs{display:none}
+.app{background:#000}
+body{background:#000}
+.lg{background:#141414;backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid #2a2a2a;box-shadow:none}
+.lg::before{display:none}
+.scrim{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(0,0,0,.7)}
+.dr{background:#0f0f0f;backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid #2a2a2a;border-bottom:0}
+</style>
+
+</head>
+<body>
+<div id="root"></div>
+<template id="tpl">
+
+
+<div class="app">
+<div class="orbs" aria-hidden="true"><div class="orb o1"></div><div class="orb o2"></div></div>
+<div class="layer">
+
+<header class="head">
+<h1>Адмінка</h1>
+<a class="back lg" href="lion-beer-delivery.html">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+На сайт
+</a>
+</header>
+
+<nav class="tabs lg" aria-label="Розділи адмінки">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+<button class="tab {{t.cls}}" onClick="{{t.pick}}" aria-pressed="{{t.active}}">{{t.label}}</button>
+</sc-for>
+</nav>
+
+<sc-if value="{{isProducts}}" hint-placeholder-val="{{ true }}">
+<section class="pane">
+<p class="note">Товари тягнуться з Poster. Вмикайте категорії та окремі товари, які мають бути на сайті. Для кожного можна змінити назву, ціну й опис, не чіпаючи Poster.</p>
+<div class="sync">
+<button class="syncb" onClick="{{sync}}" disabled="{{syncing}}"><svg class="{{syncCls}}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/></svg>{{syncLabel}}</button>
+<sc-if value="{{hasSyncMsg}}" hint-placeholder-val="{{ false }}"><p class="syncmsg">{{syncMsg}}</p></sc-if>
+</div>
+<input class="search" type="search" placeholder="Пошук товару" aria-label="Пошук товару" value="{{q}}" onInput="{{onQ}}">
+
+<sc-if value="{{hasSearch}}" hint-placeholder-val="{{ false }}">
+<div class="cat lg open">
+<div class="plist">
+<sc-for list="{{found}}" as="p" hint-placeholder-count="3">
+<div class="row">
+<input class="sw" type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}" aria-label="Показувати на сайті">
+<div class="row-t"><div class="row-n">{{p.name}}<sc-if value="{{p.isNew}}" hint-placeholder-val="{{ false }}"><span class="newtag">Новий</span></sc-if></div><div class="row-p">{{p.priceText}}</div></div>
+<button class="edit" onClick="{{p.edit}}">Змінити</button>
+</div>
+</sc-for>
+<sc-if value="{{noFound}}" hint-placeholder-val="{{ false }}"><div class="empty">Нічого не знайдено</div></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{noSearch}}" hint-placeholder-val="{{ true }}">
+<div>
+<sc-if value="{{hasNew}}" hint-placeholder-val="{{ false }}">
+<div class="cat lg open">
+<div class="cat-h"><div class="cat-b" style="cursor:default"><span><div class="cat-n">Нові з Poster</div><div class="cat-s">Вимкнені. Увімкніть ті, що мають бути на сайті</div></span></div></div>
+<div class="plist">
+<sc-for list="{{newItems}}" as="p" hint-placeholder-count="2">
+<div class="row">
+<input class="sw" type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}" aria-label="Показувати на сайті">
+<div class="row-t"><div class="row-n">{{p.name}}<span class="newtag">Новий</span></div><div class="row-p">{{p.priceText}}</div></div>
+<button class="edit" onClick="{{p.edit}}">Змінити</button>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="3">
+<div class="cat lg {{c.cls}}">
+<div class="cat-h">
+<button class="cat-b" onClick="{{c.expand}}" aria-expanded="{{c.isOpen}}">
+<svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+<span><div class="cat-n">{{c.name}}</div><div class="cat-s">{{c.status}}</div></span>
+</button>
+<input class="sw" type="checkbox" checked="{{c.all}}" onChange="{{c.toggle}}" aria-label="Показувати всю категорію на сайті">
+</div>
+<div class="cat-body"><div class="cat-in"><div class="plist">
+<sc-for list="{{c.items}}" as="p" hint-placeholder-count="2">
+<div class="row">
+<input class="sw" type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}" aria-label="Показувати на сайті">
+<div class="row-t"><div class="row-n">{{p.name}}<sc-if value="{{p.isNew}}" hint-placeholder-val="{{ false }}"><span class="newtag">Новий</span></sc-if></div><div class="row-p">{{p.priceText}}</div></div>
+<button class="edit" onClick="{{p.edit}}">Змінити</button>
+</div>
+</sc-for>
+</div></div></div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{isBanners}}" hint-placeholder-val="{{ false }}">
+<section class="pane">
+<p class="note">Це карусель на головній сторінці сайту. Додавайте новинки й акції: фото, заголовок і короткий текст. Банери міняються по черзі, перший банер завжди залишається, його текст теж можна змінити.</p>
+<div class="blk lg">
+<div class="ord-top"><span class="badge">Перший банер</span><span class="hint" style="margin:0">Показується завжди</span></div>
+<div class="fld"><label for="fb-t">Заголовок (можна лишити порожнім)</label><textarea id="fb-t" class="in" placeholder="Без тексту" onInput="{{onFirstT}}">{{first.title}}</textarea></div>
+<div class="fld"><label for="fb-s">Короткий текст (можна лишити порожнім)</label><input id="fb-s" class="in" type="text" value="{{first.sub}}" onInput="{{onFirstS}}"></div>
+<div class="fld"><button class="drop" style="height:76px">Фото банера, 1080 × 1200 пікселів</button></div>
+</div>
+<sc-for list="{{banners}}" as="b" hint-placeholder-count="2">
+<div class="blk lg">
+<div class="ord-top"><span class="badge new">Банер {{b.n}}</span><input class="sw" type="checkbox" checked="{{b.on}}" onChange="{{b.toggle}}" aria-label="Показувати на сайті"></div>
+<div class="chips" style="margin-top:14px">
+<sc-for list="{{b.kinds}}" as="k" hint-placeholder-count="3"><button class="chip {{k.cls}}" onClick="{{k.pick}}" aria-pressed="{{k.active}}">{{k.label}}</button></sc-for>
+</div>
+<div class="fld"><label for="bt{{b.n}}">Заголовок</label><input id="bt{{b.n}}" class="in" type="text" placeholder="Коротко й ясно" value="{{b.title}}" onInput="{{b.onTitle}}"></div>
+<div class="fld"><label for="bs{{b.n}}">Короткий текст</label><input id="bs{{b.n}}" class="in" type="text" placeholder="Терміни, умови" value="{{b.sub}}" onInput="{{b.onSub}}"></div>
+<div class="fld"><span class="hint">Розмір: 1080 × 1200 пікселів (майже квадрат, трохи вищий). Формат JPG або WebP, до 400 КБ. Найважливіше розміщуйте в центрі та вгорі. Внизу лишайте місце під текст: його покриває темний градієнт. Без тексту на самому фото, заголовок додається на сайті.</span></div>
+<div class="fld"><button class="drop" style="height:76px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>Фото банера</button></div>
+<button class="link" style="margin-top:8px" onClick="{{b.remove}}">Видалити банер</button>
+</div>
+</sc-for>
+<button class="act" style="width:100%;margin-bottom:12px" onClick="{{addBanner}}">Додати банер</button>
+<button class="cta" onClick="{{saveBanners}}">Зберегти</button>
+</section>
+</sc-if>
+
+<sc-if value="{{isOrders}}" hint-placeholder-val="{{ false }}">
+<section class="pane">
+<p class="note">Нові замовлення приходять сюди й у Telegram. Статус можна змінити тут або кнопкою в повідомленні. Нижче приклад картки, щоб показати вигляд. Це не справжнє замовлення.</p>
+<div class="ord lg">
+<div class="ord-top"><span class="badge {{ordCls}}">{{ordLabel}}</span><span class="sample">Приклад</span></div>
+<div style="margin-top:14px">
+<div class="ln"><span>Клієнт</span><span>[Ім'я], [телефон]</span></div>
+<div class="ln"><span>Адреса</span><span>[адреса]</span></div>
+<div class="ln"><span>Вайсбург Лагер Умань світле, 2 л × 1</span><span>204 ₴</span></div>
+<div class="ln"><span>Земан Пшеничне нефільтроване, 1 л × 1</span><span>90 ₴</span></div>
+<div class="ln"><span>Оплата</span><span>Готівкою кур'єру</span></div>
+<div class="ln"><span>Разом</span><span>294 ₴</span></div>
+</div>
+<div class="acts">
+<button class="act p" onClick="{{ordAccept}}">Прийняти</button>
+<button class="act" onClick="{{ordDone}}">Доставлено</button>
+<button class="act" onClick="{{ordCancel}}">Скасувати</button>
+</div>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{isStats}}" hint-placeholder-val="{{ false }}">
+<section class="pane">
+<div class="chips" style="margin-bottom:12px">
+<sc-for list="{{periods}}" as="p" hint-placeholder-count="3">
+<button class="chip {{p.cls}}" onClick="{{p.pick}}" aria-pressed="{{p.active}}">{{p.label}}</button>
+</sc-for>
+</div>
+<div class="tiles">
+<div class="tile lg"><span>Замовлень</span><b>—</b></div>
+<div class="tile lg"><span>Виручка</span><b>—</b></div>
+<div class="tile lg"><span>Середній чек</span><b>—</b></div>
+<div class="tile lg"><span>Скасовано</span><b>—</b></div>
+</div>
+<div class="blk lg">
+<h2>Замовлення за днями</h2>
+<div class="bars" aria-hidden="true"><i style="height:35%"></i><i style="height:60%"></i><i style="height:45%"></i><i style="height:80%"></i><i style="height:55%"></i><i style="height:95%"></i><i style="height:70%"></i></div>
+<p class="note" style="margin:12px 0 0">Так виглядатиме графік. Дані з'являться після перших замовлень.</p>
+</div>
+<div class="blk lg">
+<h2>Топ товарів</h2>
+<p class="note" style="margin:0">Тут будуть найпопулярніші позиції й розподіл за оплатою: готівка чи картка.</p>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{isSite}}" hint-placeholder-val="{{ false }}">
+<section class="pane">
+<p class="note">Ці тексти показуються в меню сайту (три риски вгорі). Змінили тут, і вони одразу оновляться на сайті.</p>
+<div class="blk lg">
+<h2>Доставка</h2>
+<div class="fld" style="margin-top:0"><label for="s-h">Графік роботи</label><input id="s-h" class="in" type="text" placeholder="Дні та години" value="{{site.hours}}" onInput="{{onHours}}"></div>
+<div class="fld"><label for="s-z">Зона доставки</label><input id="s-z" class="in" type="text" placeholder="Куди возите" value="{{site.zone}}" onInput="{{onZone}}"></div>
+<div class="two">
+<div class="fld"><label for="s-p">Вартість доставки</label><input id="s-p" class="in" type="text" placeholder="Сума" value="{{site.price}}" onInput="{{onPrice}}"></div>
+<div class="fld"><label for="s-m">Мінімальна сума</label><input id="s-m" class="in" type="text" placeholder="Сума" value="{{site.min}}" onInput="{{onMin}}"></div>
+</div>
+</div>
+<div class="blk lg">
+<h2>Контакти</h2>
+<div class="fld" style="margin-top:0"><label for="s-t">Телефон</label><input id="s-t" class="in" type="tel" placeholder="+380" value="{{site.phone}}" onInput="{{onPhone}}"></div>
+<div class="fld"><label for="s-a">Адреса магазину</label><input id="s-a" class="in" type="text" placeholder="Адреса" value="{{site.addr}}" onInput="{{onAddr}}"></div>
+</div>
+<div class="blk lg">
+<h2>Соцмережі та карта</h2>
+<div class="fld" style="margin-top:0"><label for="s-ig">Instagram</label><input id="s-ig" class="in" type="text" placeholder="Посилання на профіль" value="{{site.ig}}" onInput="{{onIg}}"></div>
+<div class="fld"><label for="s-tt">TikTok</label><input id="s-tt" class="in" type="text" placeholder="Посилання на профіль" value="{{site.tt}}" onInput="{{onTt}}"></div>
+<div class="fld"><label for="s-th">Threads</label><input id="s-th" class="in" type="text" placeholder="Посилання на профіль" value="{{site.th}}" onInput="{{onTh}}"></div>
+<div class="fld"><label for="s-mp">Google Maps</label><input id="s-mp" class="in" type="text" placeholder="Посилання на ваш магазин" value="{{site.maps}}" onInput="{{onMaps}}"></div>
+</div>
+<div class="blk lg">
+<h2>Тара</h2>
+<p class="note" style="margin:0 0 12px">Ціна тари додається в кошик автоматично до кожного напою на розлив. Клієнт бачить її окремим рядком із поясненням.</p>
+<div class="two" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr))">
+<sc-for list="{{taraList}}" as="tr" hint-placeholder-count="5">
+<div class="fld" style="margin-top:0"><label for="{{tr.id}}">{{tr.label}}, ₴</label><input id="{{tr.id}}" class="in" type="text" inputmode="decimal" value="{{tr.value}}" onInput="{{tr.on}}"></div>
+</sc-for>
+</div>
+</div>
+<div class="blk lg">
+<h2>Сповіщення</h2>
+<div class="tg">
+<span class="tg-t">Нові замовлення в Telegram<small>Повідомлення з кнопками «Прийняти», «Доставлено», «Скасувати»</small></span>
+<input class="sw" type="checkbox" checked="{{tgOn}}" onChange="{{onTg}}" aria-label="Сповіщення в Telegram">
+</div>
+</div>
+<button class="cta" onClick="{{saveSite}}">Зберегти</button>
+</section>
+</sc-if>
+
+</div>
+
+<button class="scrim {{drCls}}" onClick="{{closeEdit}}" aria-label="Закрити" tabindex="-1"></button>
+<section class="dr lg {{drCls}}" aria-label="Редагування товару">
+<div class="grab"></div>
+<div class="dr-h">
+<h2>{{ed.title}}</h2>
+<button class="iconbtn" onClick="{{closeEdit}}" aria-label="Закрити">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+</button>
+</div>
+<div class="fld"><label for="e-n">Назва на сайті</label><input id="e-n" class="in" type="text" value="{{ed.name}}" onInput="{{onEName}}"></div>
+<div class="fld">
+<label for="e-p">Ціна на сайті, ₴ ({{ed.unitHint}})</label>
+<input id="e-p" class="in" type="text" inputmode="decimal" value="{{ed.price}}" onInput="{{onEPrice}}">
+<span class="hint">У Poster: {{ed.posterPrice}}</span>
+<button class="link" onClick="{{resetPrice}}">Повернути ціну з Poster</button>
+</div>
+<div class="fld"><label for="e-d">Опис</label><textarea id="e-d" class="in" placeholder="Смак, аромат, з чим пити" onInput="{{onEDesc}}">{{ed.desc}}</textarea></div>
+<div class="fld"><label>Рівні для пива</label><span class="hint">Вмикайте лише потрібне. Для сидру чи просекко можна обрати тільки міцність.</span></div>
+<sc-for list="{{metrics}}" as="m" hint-placeholder-count="3">
+<div class="mbox">
+<div class="mrow"><span class="mname">{{m.label}}</span><input class="sw" type="checkbox" checked="{{m.on}}" onChange="{{m.toggle}}" aria-label="Показувати на сайті"></div>
+<sc-if value="{{m.on}}" hint-placeholder-val="{{ false }}">
+<div class="mfields">
+<div class="fld" style="margin-top:0"><label for="{{m.id}}">Значення</label><input id="{{m.id}}" class="in" type="text" placeholder="Наприклад, 4" value="{{m.v}}" onInput="{{m.onV}}"></div>
+<div class="fld" style="margin-top:0"><label>Рівень на шкалі від 1 до 5</label>
+<div class="lv5"><sc-for list="{{m.levels}}" as="l" hint-placeholder-count="5"><button class="lvb {{l.cls}}" onClick="{{l.pick}}" aria-pressed="{{l.active}}">{{l.n}}</button></sc-for></div>
+<div class="pv"><sc-for list="{{m.segs}}" as="g" hint-placeholder-count="5"><i class="{{g.cls}}"></i></sc-for></div>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<div class="fld">
+<label>Бейдж на картці</label>
+<div class="chips">
+<sc-for list="{{badges}}" as="b" hint-placeholder-count="3">
+<button class="chip {{b.cls}}" onClick="{{b.pick}}" aria-pressed="{{b.active}}">{{b.label}}</button>
+</sc-for>
+</div>
+<span class="hint">На сайті бейдж має свою анімацію. Новинка мерехтить, Хіт продажу палає.</span>
+</div>
+<div class="fld"><label>Смаки (модифікації)</label><span class="hint">Для товарів зі смаками: насіння, чіпси, сухарики. Клієнт обирає смак на картці. Порожня ціна означає ціну товару. Смаки з Poster підтягуються синхронізацією, нові вимкнені.</span></div>
+<sc-for list="{{modRows}}" as="m" hint-placeholder-count="3">
+<div class="mbox">
+<div class="mrow"><input class="in" type="text" placeholder="Назва смаку" value="{{m.n}}" onInput="{{m.onN}}" aria-label="Назва смаку"><input class="sw" type="checkbox" checked="{{m.on}}" onChange="{{m.toggle}}" aria-label="Показувати на сайті"></div>
+<div class="mrow" style="margin-top:8px"><input class="in" type="text" inputmode="decimal" placeholder="Своя ціна, ₴" value="{{m.p}}" onInput="{{m.onP}}" aria-label="Ціна смаку"><button class="edit" onClick="{{m.remove}}">Видалити</button></div>
+</div>
+</sc-for>
+<div class="fld"><button class="edit" onClick="{{addMod}}">+ Додати смак</button></div>
+<div class="fld"><label>Варіанти об'єму</label>
+<div class="chips">
+<sc-for list="{{presets}}" as="u" hint-placeholder-count="3">
+<button class="chip {{u.cls}}" onClick="{{u.pick}}" aria-pressed="{{u.active}}">{{u.label}}</button>
+</sc-for>
+</div>
+</div>
+<div class="fld"><label>Фото (вертикальне, формат 3:4)</label><span class="hint">Бокал на чорному фоні, як на цінниках. Ідеально 900×1200 пікселів.</span><button class="drop"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>Завантажити вертикальне фото</button></div>
+<button class="cta" onClick="{{saveEdit}}">Зберегти товар</button>
+</section>
+
+<div class="toast lg {{toastCls}}" role="status">{{toastText}}</div>
+</div>
+</template>
+<script>window.__BLOB={};</script>
+<script>(function(){
+var FULL=/^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
+var ANY=/\{\{\s*([^}]+?)\s*\}\}/g;
+function get(path,scope){
+  path=path.trim();
+  if(path==='true')return true; if(path==='false')return false; if(path==='null')return null;
+  if(/^-?\d+(\.\d+)?$/.test(path))return +path;
+  var parts=path.split('.'),v=scope[parts[0]];
+  for(var i=1;i<parts.length;i++){ if(v==null)return undefined; v=v[parts[i]]; }
+  return v;
+}
+function interp(s,scope){ return s.replace(ANY,function(m,p){var v=get(p,scope);return v==null?'':String(v);}); }
+function blob(v){ if(typeof v==='string'&&v.indexOf('/_blob/')===0){ return window.__BLOB[v.slice(7)]||v; } return v; }
+function setAttr(el,name,value,scope){
+  if(name.indexOf('hint-')===0)return;
+  var lname=name.toLowerCase(), m=value.match(FULL);
+  if(lname.indexOf('on')===0 && m){ el[lname]=get(m[1],scope)||null; return; }
+  if(m){
+    var v=get(m[1],scope);
+    if(lname==='disabled'){ el.disabled=!!v; return; }
+    if(lname==='checked'){ el.checked=!!v; return; }
+    if(lname==='value'){ el.value=v==null?'':v; return; }
+    if(lname.indexOf('aria-')===0){ el.setAttribute(name,String(!!v===v?v:v)); return; }
+    if(v==null||v===false)return;
+    el.setAttribute(name,String(blob(v))); return;
+  }
+  var out=interp(value,scope);
+  el.setAttribute(name,lname==='src'?blob(out):out);
+}
+function build(nodes,scope,out){
+  for(var k=0;k<nodes.length;k++){
+    var n=nodes[k];
+    if(n.nodeType===3){ out.appendChild(document.createTextNode(interp(n.nodeValue,scope))); continue; }
+    if(n.nodeType!==1)continue;
+    var tag=n.localName;
+    if(tag==='sc-if'){
+      var mv=n.getAttribute('value').match(FULL);
+      var cond=mv?get(mv[1],scope):interp(n.getAttribute('value'),scope);
+      if(cond) build(n.childNodes,scope,out);
+      continue;
+    }
+    if(tag==='sc-for'){
+      var ml=n.getAttribute('list').match(FULL);
+      var list=(ml?get(ml[1],scope):null)||[];
+      var as=n.getAttribute('as');
+      for(var i=0;i<list.length;i++){
+        var sc=Object.create(scope); sc[as]=list[i]; sc.$index=i;
+        build(n.childNodes,sc,out);
+      }
+      continue;
+    }
+    var el=n.namespaceURI?document.createElementNS(n.namespaceURI,tag):document.createElement(tag);
+    for(var a=0;a<n.attributes.length;a++) setAttr(el,n.attributes[a].name,n.attributes[a].value,scope);
+    build(n.childNodes,scope,el);
+    if(tag==='textarea') el.value=el.textContent;
+    out.appendChild(el);
+  }
+}
+function syncAttrs(oo,nn){
+  var i,a;
+  for(i=oo.attributes.length-1;i>=0;i--){ a=oo.attributes[i]; if(!nn.hasAttribute(a.name)) oo.removeAttribute(a.name); }
+  for(i=0;i<nn.attributes.length;i++){ a=nn.attributes[i]; if(oo.getAttribute(a.name)!==a.value) oo.setAttribute(a.name,a.value); }
+  var t=nn.localName;
+  if(t==='input'||t==='textarea'){
+    if(oo.value!==nn.value) oo.value=nn.value;
+    if(t==='input'&&oo.checked!==nn.checked) oo.checked=nn.checked;
+  }
+  if('disabled' in oo && oo.disabled!==nn.disabled) oo.disabled=nn.disabled;
+  oo.onclick=nn.onclick; oo.oninput=nn.oninput; oo.onchange=nn.onchange; oo.ontouchstart=nn.ontouchstart; oo.ontouchend=nn.ontouchend;
+}
+function patch(oldP,newP){
+  var o=Array.prototype.slice.call(oldP.childNodes), n=Array.prototype.slice.call(newP.childNodes), i;
+  for(i=0;i<n.length;i++){
+    var nn=n[i], oo=o[i];
+    if(!oo){ oldP.appendChild(nn); continue; }
+    if(nn.nodeType!==oo.nodeType||(nn.nodeType===1&&(nn.localName!==oo.localName||nn.namespaceURI!==oo.namespaceURI))){ oldP.replaceChild(nn,oo); continue; }
+    if(nn.nodeType===3){ if(oo.nodeValue!==nn.nodeValue) oo.nodeValue=nn.nodeValue; continue; }
+    syncAttrs(oo,nn); patch(oo,nn);
+  }
+  for(i=o.length-1;i>=n.length;i--) oldP.removeChild(o[i]);
+}
+window.DCLogic=function DCLogic(props){ this.props=props||{}; this.state={}; };
+window.DCLogic.prototype.setState=function(p){ var n=typeof p==='function'?p(this.state):p; Object.assign(this.state,n); this._sched&&this._sched(); };
+window.DCLogic.prototype.forceUpdate=function(){ this._sched&&this._sched(); };
+window.dcMount=function(Comp,root){
+  var tpl=document.getElementById('tpl').content;
+  var inst=new Comp({}), pending=false;
+  function render(){
+    pending=false;
+    var frag=document.createDocumentFragment();
+    build(Array.prototype.slice.call(tpl.childNodes),inst.renderVals(),frag);
+    patch(root,frag);
+  }
+  inst._sched=function(){ if(!pending){ pending=true; Promise.resolve().then(render); } };
+  render();
+  if(inst.componentDidMount) inst.componentDidMount();
+};
+})();
+</script>
+<script>
+var Comp=(function(){
+
+class Component extends DCLogic {
+  state = {
+    tab: 'products',
+    q: '',
+    openCat: '13',
+    on: null,
+    edits: { '294': { name: 'Kysil Pastry Sour Smoothie', desc: 'ШО Brewery', m: { str: { on: true, v: '4', l: 1 }, bit: { on: true, v: '5', l: 1 }, den: { on: true, v: '14', l: 3 } } } },
+    editId: null,
+    drOpen: false,
+    draft: {},
+    preset: 'beer',
+    ord: 'new',
+    period: 'week',
+    toast: '',
+    syncing: false,
+    syncMsg: '',
+    newIds: {},
+    syncCount: 0,
+    tgOn: true,
+    tara: { '0.5': '6', '1': '7', '1.5': '7', '2': '8', '3': '9' },
+    first: { title: '', sub: '' },
+    banners: [{ kind: 'Новинка', title: '', sub: '', on: true }, { kind: 'Акція', title: '', sub: '', on: true }],
+    site: { hours: '', zone: '', price: '', min: '', phone: '+380', addr: '', ig: 'https://www.instagram.com/lionbeer.ua/', tt: 'https://www.tiktok.com/@lionbeer.ua', th: 'https://www.threads.com/@lionbeer.ua', maps: 'https://maps.app.goo.gl/7LUDdEkn1Xc5o8Er9' }
+  };
+
+  componentDidMount() {
+    if (!this.state.on) this.setState({ on: this.initOn() });
+  }
+
+  upB(i, patch) {
+    this.setState({ banners: this.state.banners.map((b, j) => (j === i ? { ...b, ...patch } : b)) });
+  }
+
+  initOn() {
+    const D = this.data();
+    const on = {};
+    const SN = ['120', '203', '51', '76', '50', '58', '281', '279', '59', '83', '209', '127', '137', '142', '135', '136', '305', '302', '303', '201', '231', '232'];
+    D.prods.forEach((p) => { if (p.c === '13' || SN.indexOf(p.i) >= 0) on[p.i] = true; });
+    return on;
+  }
+
+  data() {
+    if (!this._d) this._d = {"cats":[{"id":"4","n":"Снеки","c":42},{"id":"9","n":"Кальмарова група","c":9},{"id":"10","n":"Рибна група","c":30},{"id":"11","n":"М'ясна група","c":16},{"id":"12","n":"Горіхи, сир та грінки","c":10},{"id":"7","n":"Напої","c":58},{"id":"8","n":"Тара","c":7},{"id":"13","n":"Напої на розлив","c":30},{"id":"15","n":"Пиво в склі / з.б.","c":62}],"prods":[{"i":"301","c":"4","n":"Bob Snail Choco 60г","p":0,"w":0},{"i":"193","c":"4","n":"Bob Snail страйпси смужка 14г","p":0,"w":0},{"i":"209","c":"15","n":"Budweiser Budvar ПИВО 0.33л","p":69.0,"w":0},{"i":"273","c":"7","n":"Coca Cola Original 0.33л з/б","p":46.0,"w":0},{"i":"172","c":"7","n":"Coca Cola з/б 250мл","p":30.0,"w":0},{"i":"124","c":"15","n":"CORONA EXRA ПИВО 0.33Л","p":75.0,"w":0},{"i":"175","c":"15","n":"CORONA EXTRA ПИВО 0.33 Б/А","p":70.0,"w":0},{"i":"127","c":"15","n":"CORONA EXTRA ПИВО 0.33Л З/Б","p":58.0,"w":0},{"i":"137","c":"15","n":"ESTRELLA DAMN ПИВО СВІТЛЕ 0,5Л З/Б","p":69.0,"w":0},{"i":"128","c":"15","n":"ESTRELLA GALICIA ПИВО ESPECIAL 0.5 З/Б","p":70.0,"w":0},{"i":"162","c":"4","n":"Flint Грінки Craft Кабаноси та Гірчиця","p":39.0,"w":0},{"i":"18","c":"4","n":"Flint Грінки Крафт","p":0,"w":0},{"i":"19","c":"4","n":"Flint Сухарики 60г","p":0,"w":0},{"i":"237","c":"15","n":"Garage Пиво 0.44л","p":0,"w":0},{"i":"139","c":"15","n":"GARAGE ПИВО ЛИМОН 0.44Л","p":60.0,"w":0},{"i":"142","c":"15","n":"GRIMBERGEN BLONDE 0,5Л Ж/Б","p":85.0,"w":0},{"i":"141","c":"15","n":"GRIMBERGEN DOUBLE AMBREE 0,5Л .","p":85.0,"w":0},{"i":"125","c":"15","n":"GRIMBERGEN ПИВО BLANCHE 0,5Л З/Б","p":85.0,"w":0},{"i":"136","c":"15","n":"GUINNES ORIGINAL ПИВО 0.33Л","p":120.0,"w":0},{"i":"135","c":"15","n":"HOEGAARDEN ПИВО БІЛЕ 0.5Л З/Б","p":99.0,"w":0},{"i":"67","c":"11","n":"Jerky \"Індичка\" 100г вакум","p":184.0,"w":0},{"i":"66","c":"11","n":"Jerky \"Курка\" 100г вакум","p":156.0,"w":0},{"i":"65","c":"11","n":"Jerky \"Чилі Курка\" 100г вакум","p":156.0,"w":0},{"i":"305","c":"4","n":"Kinder яйце шоколадне дитяче з іграшкою","p":85.0,"w":0},{"i":"302","c":"4","n":"Kitkat шоколадка 99г","p":99.0,"w":0},{"i":"250","c":"15","n":"Krombacher пиво безалкогольне 0.5л з/б","p":72.0,"w":0},{"i":"140","c":"15","n":"KRONENBOURG ПИВО 0.33Л З/Б","p":45.0,"w":0},{"i":"212","c":"15","n":"Krusovice пиво темне 0.5л з/б","p":52.0,"w":0},{"i":"282","c":"15","n":"Leffe Blond Ruby пиво 0.5л з/б","p":99.0,"w":0},{"i":"211","c":"15","n":"Leffe Blond пиво 0.5л з/б","p":99.0,"w":0},{"i":"210","c":"15","n":"Leffe пиво темне 0.5л з/б","p":99.0,"w":0},{"i":"303","c":"4","n":"Lion батончик 42г","p":39.0,"w":0},{"i":"130","c":"15","n":"LOWENBRAU ПИВО Б/А 0.5Л З/Б","p":52.0,"w":0},{"i":"238","c":"15","n":"Mike's пиво 0.43л","p":0,"w":0},{"i":"242","c":"7","n":"Mojo напій газований 0.33л з/б","p":0,"w":0},{"i":"173","c":"7","n":"Pepsi Вишня без цукру 0.5л","p":35.0,"w":0},{"i":"229","c":"15","n":"Pilsner Urquel Пиво світле 0.5л з/б","p":92.0,"w":0},{"i":"126","c":"15","n":"SOMERSBY СИДР 0.5Л З/Б","p":58.0,"w":0},{"i":"132","c":"7","n":"SOMERSBY СИДР ГРУША 0,33Л Б/А","p":44.0,"w":0},{"i":"177","c":"15","n":"SOMERSBY СИДР ГРУША 0.5Л З/Б","p":58.0,"w":0},{"i":"176","c":"15","n":"SOMERSBY СИДР МАЛИНА ЛАЙМ 0,5Л З/Б","p":58.0,"w":0},{"i":"134","c":"15","n":"SOMERSBY СИДР ПЕРС-ГУАВА 0,5Л З/Б","p":58.0,"w":0},{"i":"133","c":"7","n":"SOMERSBY СИДР ПОЛУНИЦЯ ЛАЙМ 0,33Л Б/А","p":44.0,"w":0},{"i":"129","c":"15","n":"SOMERSBY СИДР ЧОРНИЦЯ 0.5Л З/Б .","p":58.0,"w":0},{"i":"131","c":"15","n":"STELLA ARTOIS ПИВО 0.33Л","p":35.0,"w":0},{"i":"138","c":"15","n":"STELLA ARTOIS ПИВО 0.5Л З/Б","p":64.0,"w":0},{"i":"214","c":"15","n":"Volfas Engelman Bohemijos пиво 0.5л з/б","p":79.0,"w":0},{"i":"215","c":"15","n":"Volfas Engelman IPA пиво 0.5л з/б","p":79.0,"w":0},{"i":"213","c":"15","n":"Volfas Engelman Traditional пиво 0.5л з/б","p":79.0,"w":0},{"i":"275","c":"10","n":"Ікра корюшки","p":230.0,"w":1},{"i":"276","c":"10","n":"Ікра ляща","p":190.0,"w":1},{"i":"68","c":"10","n":"Ікра мойви","p":232.0,"w":1},{"i":"44","c":"10","n":"Ікра тарані ястик","p":240.0,"w":1},{"i":"56","c":"10","n":"Ікряник \"Класичний\"","p":88.0,"w":1},{"i":"280","c":"11","n":"Індичка мед гірчиця","p":134.0,"w":1},{"i":"271","c":"11","n":"Індичка підкопчена","p":134.0,"w":1},{"i":"224","c":"7","n":"Американо з молоком кава","p":55.0,"w":0},{"i":"223","c":"7","n":"Американо кава","p":45.0,"w":0},{"i":"38","c":"10","n":"Анчоус","p":80.0,"w":1},{"i":"47","c":"12","n":"Арахіс","p":0,"w":1},{"i":"281","c":"11","n":"Бастурма в'ялена","p":204.0,"w":1},{"i":"16","c":"4","n":"Брускети Maretti 140г","p":0,"w":0},{"i":"17","c":"4","n":"Брускети Maretti 70г","p":0,"w":0},{"i":"60","c":"8","n":"Бутилка тара 0.5л","p":6.0,"w":0},{"i":"62","c":"8","n":"Бутилка тара 1,5л","p":7.0,"w":0},{"i":"61","c":"8","n":"Бутилка тара 1л","p":7.0,"w":0},{"i":"63","c":"8","n":"Бутилка тара 2л","p":8.0,"w":0},{"i":"64","c":"8","n":"Бутилка тара 3л","p":9.0,"w":0},{"i":"189","c":"7","n":"Вода газована Rioba 0.5л","p":24.0,"w":0},{"i":"190","c":"7","n":"Вода газована Rioba 1.5л","p":40.0,"w":0},{"i":"188","c":"7","n":"Вода негазована Rioba 0.5л","p":24.0,"w":0},{"i":"191","c":"7","n":"Вода негазована Rioba 1.5л","p":40.0,"w":0},{"i":"71","c":"9","n":"Восьминіг п'ятачки з крабом","p":170.0,"w":1},{"i":"300","c":"11","n":"Вуха свинні 250г","p":150.0,"w":0},{"i":"39","c":"10","n":"Голд Фіш","p":96.0,"w":1},{"i":"86","c":"12","n":"Горішки в асортименті","p":1.0,"w":0},{"i":"91","c":"12","n":"Грінки Хвилясті Полтавські","p":0,"w":1},{"i":"293","c":"7","n":"Еспресо з молоком кава","p":50.0,"w":0},{"i":"221","c":"7","n":"Еспресо кава","p":40.0,"w":0},{"i":"40","c":"10","n":"Жовтий смугастик Преміум","p":108.0,"w":1},{"i":"76","c":"9","n":"Кільце кальмара","p":142.0,"w":1},{"i":"77","c":"9","n":"Кільце кальмара з крабом","p":148.0,"w":1},{"i":"58","c":"11","n":"Кабаноси вагові","p":78.0,"w":1},{"i":"50","c":"9","n":"Кальмар стружка молочна","p":132.0,"w":1},{"i":"41","c":"10","n":"Камбалка","p":112.0,"w":1},{"i":"225","c":"7","n":"Капучино кава","p":60.0,"w":0},{"i":"269","c":"4","n":"Картопляні снеки Hrups","p":60.0,"w":0},{"i":"179","c":"13","n":"Квас на розлив б/а Золотоніський 0.5л","p":26.0,"w":0},{"i":"170","c":"7","n":"КВАС ТАРАС FLOWER POWER 0.5 з/б","p":40.0,"w":0},{"i":"143","c":"7","n":"КВАС ТАРАС ХЛІБНИЙ 0.5Л З/Б","p":40.0,"w":0},{"i":"144","c":"7","n":"КВАС ТАРАС ЧОРНИЙ 0.5Л З/Б","p":40.0,"w":0},{"i":"28","c":"7","n":"Комбуча Ever Aid 0.33л з/б","p":0,"w":0},{"i":"21","c":"7","n":"Комбуча Junbucha 0.33 з/б","p":0,"w":0},{"i":"20","c":"7","n":"Комбуча Mikki Brew 0.33л з/б","p":0,"w":0},{"i":"23","c":"7","n":"Комбуча Mikki Brew 0.5л з/б","p":0,"w":0},{"i":"96","c":"10","n":"Корюшка","p":140.0,"w":1},{"i":"88","c":"12","n":"Кріспі","p":0,"w":1},{"i":"73","c":"9","n":"Крабова паличка сушена","p":152.0,"w":1},{"i":"10","c":"4","n":"Креветкові Чипси Shrips","p":0,"w":0},{"i":"48","c":"12","n":"Кукурудза","p":0,"w":1},{"i":"186","c":"12","n":"Кукурудза в асортименті","p":0.1,"w":0},{"i":"89","c":"11","n":"Курочка Халяль","p":0,"w":0},{"i":"279","c":"11","n":"Курячі палички пармезан","p":130.0,"w":1},{"i":"185","c":"11","n":"Курячи чипси \"Трюфель\"","p":152.0,"w":1},{"i":"234","c":"10","n":"Лакедра","p":128.0,"w":1},{"i":"226","c":"7","n":"Лате кава","p":70.0,"w":0},{"i":"24","c":"7","n":"Лимонад Limonati Borjomi  0.33 з/б","p":0,"w":0},{"i":"25","c":"7","n":"Лимонад Natakhtari 0.5л с/б","p":0,"w":0},{"i":"240","c":"7","n":"Лимонад Uman 0.5л","p":0,"w":0},{"i":"241","c":"7","n":"Лимонад Грузинський Букет 0.5л","p":0,"w":0},{"i":"266","c":"7","n":"Лимонад Мова 0.33 з/б","p":0,"w":0},{"i":"299","c":"13","n":"Лимонад на розлив Тархун 0.5л","p":30.0,"w":0},{"i":"180","c":"13","n":"Лимонад на розлив Уманський б/а 0.5л","p":28.0,"w":0},{"i":"228","c":"7","n":"Лонг блек кава","p":45.0,"w":0},{"i":"145","c":"7","n":"ЛЬВІВСЬКИЙ КВАС БІЛИЙ 0.5Л З/Б","p":45.0,"w":0},{"i":"95","c":"10","n":"Лящ Ікряний","p":114.0,"w":1},{"i":"205","c":"10","n":"Лящ ікряний дрібний","p":80.0,"w":1},{"i":"233","c":"10","n":"Лящ Ікряний Преміум Великий","p":275.0,"w":1},{"i":"195","c":"10","n":"М'ясо креветки сушене","p":350.0,"w":1},{"i":"235","c":"10","n":"Мідія сушена","p":184.0,"w":1},{"i":"31","c":"7","n":"Напій Chupa Chups 0.25л Melon Cream з/б","p":55.0,"w":0},{"i":"29","c":"7","n":"Напій Chupa Chups Sour Blueberry 0.33л з/б","p":75.0,"w":0},{"i":"264","c":"7","n":"Напій Chupa Chups0.33л з/б","p":0,"w":0},{"i":"26","c":"7","n":"Напій Coca Cola 0.33л з/б","p":0,"w":0},{"i":"169","c":"7","n":"Напій Dr.Pepper 0.33 Vanilla з/б","p":49.0,"w":0},{"i":"22","c":"7","n":"Напій Dr.Pepper 0.33 з/б","p":49.0,"w":0},{"i":"168","c":"7","n":"Напій Dr.Pepper Cherry 0.33 з/б","p":49.0,"w":0},{"i":"167","c":"7","n":"Напій Dr.Pepper Strawberries Cream 0.33 з/б","p":49.0,"w":0},{"i":"30","c":"7","n":"Напій Fanta Lemon 0.33л з/б","p":72.0,"w":0},{"i":"27","c":"7","n":"Напій Tropi  0.33л з/б","p":0,"w":0},{"i":"158","c":"15","n":"Напій винний Fratelli Fragolino Bianco 6-6.9% 0.33 л","p":62.0,"w":0},{"i":"154","c":"15","n":"Напій винний Fratelli Fragolino Rosso 6-6.9% 0.33 л","p":62.0,"w":0},{"i":"156","c":"15","n":"Напій винний Fratelli Mango Bongo 6- 6.9% 330 мл","p":62.0,"w":0},{"i":"155","c":"15","n":"Напій винний Fratelli Maracuja Giallo  6-6.9% 0.33 л","p":62.0,"w":0},{"i":"157","c":"15","n":"Напій винний Fratelli Moscato Bianco 6- 6.9% 0.33 л","p":62.0,"w":0},{"i":"35","c":"7","n":"Напій кавовий Jaffa","p":0,"w":0},{"i":"263","c":"7","n":"Напій Соковий ALOE 0.5л","p":0,"w":0},{"i":"36","c":"7","n":"Напій соковий Elements 0.33л з/б","p":0,"w":0},{"i":"261","c":"7","n":"Напій соковий Jumi Jumi 0.32л","p":0,"w":0},{"i":"265","c":"7","n":"Напій соковий Milkis 0.25л з/б","p":0,"w":0},{"i":"277","c":"7","n":"Напій солодовий б/а Bavaria Smalt","p":0,"w":0},{"i":"306","c":"4","n":"Насіння соняшникове Зерня","p":56.0,"w":0},{"i":"52","c":"10","n":"Охотський посол преміум","p":116.0,"w":1},{"i":"53","c":"10","n":"Охотський посол преміум з перцем","p":116.0,"w":1},{"i":"181","c":"8","n":"Пакет майка чорний","p":5.0,"w":0},{"i":"285","c":"15","n":"Пиво 5л в бочці Будвайзер","p":949.0,"w":0},{"i":"286","c":"15","n":"Пиво 5л в бочці Кромбахер","p":949.0,"w":0},{"i":"260","c":"15","n":"Пиво Budweiser 0.5л з/б","p":75.0,"w":0},{"i":"253","c":"15","n":"Пиво Carlsberg безалкогольне 0.5л з/б","p":49.0,"w":0},{"i":"284","c":"15","n":"Пиво Claro 0.33л","p":58.0,"w":0},{"i":"254","c":"15","n":"Пиво Krombacher Hell 0.5л з/б","p":77.0,"w":0},{"i":"255","c":"15","n":"Пиво Krombacher Pils 0.5л з/б","p":77.0,"w":0},{"i":"256","c":"15","n":"Пиво Krombacher Weizen 0.5л з/б","p":77.0,"w":0},{"i":"153","c":"15","n":"Пиво Krusovice Svetle, світле, 4,2%, з/б, 0,5 л","p":48.0,"w":0},{"i":"290","c":"15","n":"Пиво Miller Genuine Draft 0.5л","p":58.0,"w":0},{"i":"288","c":"15","n":"Пиво Paulaner Dunkel темне 0.5л з/б","p":106.0,"w":0},{"i":"257","c":"15","n":"Пиво Paulaner Original світле 0.5л з/б","p":106.0,"w":0},{"i":"258","c":"15","n":"Пиво Paulaner Weizen 0.5л з/б","p":106.0,"w":0},{"i":"289","c":"7","n":"Пиво Paulaner безалкогольне світле 0.5л з/б","p":106.0,"w":0},{"i":"149","c":"15","n":"Пиво Volfas Engelman APA світле 5% 0,568 л з/б","p":79.0,"w":0},{"i":"259","c":"15","n":"Пиво Volfas Engelman Balta Pinta з/б 0.568 л","p":79.0,"w":0},{"i":"147","c":"15","n":"Пиво Volfas Engelman Blanc з/б, 5%, 0,568л","p":79.0,"w":0},{"i":"148","c":"15","n":"Пиво Volfas Engelman Blond світле, 4.5%, з/б, 0.568 л","p":79.0,"w":0},{"i":"252","c":"15","n":"Пиво Warsteiner безалкогольне 0.5л з/б","p":99.0,"w":0},{"i":"283","c":"15","n":"Пиво Warsteiner світле 0.5 л з/б","p":99.0,"w":0},{"i":"174","c":"15","n":"Пиво Warsteiner світле 2.5% 0.33 л","p":0,"w":0},{"i":"249","c":"15","n":"Пиво безалкогольне Estrella Galicia Tostada 0.25л","p":62.0,"w":0},{"i":"287","c":"7","n":"Пиво безалкогольне Hooegarden 0.33л з/б","p":69.0,"w":0},{"i":"251","c":"15","n":"Пиво безалкогольне Hooegarden Rose 0.33л з/б","p":75.0,"w":0},{"i":"152","c":"15","n":"Пиво безалкогольне Kronenbourg 1664 Blanc №0 світле 0.33 л з/б","p":42.0,"w":0},{"i":"296","c":"13","n":"Пиво на розлив імпорт Primator темне 0.5л","p":125.0,"w":0},{"i":"206","c":"13","n":"Пиво на розлив імпорт Rolinck Pilsner 0.5л","p":90.0,"w":0},{"i":"207","c":"13","n":"Пиво на розлив імпорт Volfas Engleman Blanche 0.5л","p":90.0,"w":0},{"i":"270","c":"13","n":"Пиво на розлив імпорт Будвайзер Будвар 0.5л","p":125.0,"w":0},{"i":"220","c":"13","n":"Пиво на розлив ІРА Ремесло Хижак 0.5л","p":87.5,"w":0},{"i":"106","c":"13","n":"Пиво на розлив Ірландський Ель 0.5л","p":72.0,"w":0},{"i":"105","c":"13","n":"Пиво на розлив Англійський Ель 0.5л","p":77.0,"w":0},{"i":"183","c":"13","n":"Пиво на розлив Бельгійський Голден Ель 0.5л","p":72.0,"w":0},{"i":"268","c":"13","n":"Пиво на розлив Бердичівське Голд  пшеничне н/ф 0.5л","p":57.5,"w":0},{"i":"108","c":"13","n":"Пиво на розлив Бердичівське Лагер Світле 0.5л","p":53.0,"w":0},{"i":"110","c":"13","n":"Пиво на розлив Вайсбург Бланш Умань нефільтроване 0.5л","p":54.0,"w":0},{"i":"109","c":"13","n":"Пиво на розлив Вайсбург Лагер Умань світле 0.5л","p":51.0,"w":0},{"i":"113","c":"13","n":"Пиво на розлив Купава Wheat Rebrew 0.5л","p":93.0,"w":0},{"i":"184","c":"13","n":"Пиво на розлив Лагер Ремесло 0.5л","p":65.0,"w":0},{"i":"98","c":"13","n":"Пиво на розлив Мова безалкогольне світле 0.5л","p":102.5,"w":0},{"i":"267","c":"13","n":"Пиво на розлив Мова Паляниця 0.5л","p":65.0,"w":0},{"i":"298","c":"13","n":"Пиво на розлив Ремесло Австрійське 0.5л","p":66.0,"w":0},{"i":"115","c":"13","n":"Пиво на розлив Ремесло Німецький Вайсбір 0.5л","p":65.0,"w":0},{"i":"117","c":"13","n":"Пиво на розлив Ремесло Празьке 0.5л","p":66.0,"w":0},{"i":"116","c":"13","n":"Пиво на розлив Ремесло Чеський пілзнер 0.5л","p":65.0,"w":0},{"i":"219","c":"13","n":"Пиво на розлив світле Земан Пшеничне нефільтроване 0.5л","p":45.0,"w":0},{"i":"294","c":"13","n":"Пиво на розлив ШО Кисіль 0.5л","p":137.5,"w":0},{"i":"295","c":"13","n":"Пиво на розлив ШО Томатне Козако Мексікано 0.5л","p":137.5,"w":0},{"i":"151","c":"15","n":"Пиво Уманьпиво Milk Stout темне 4.2% 0.33 л","p":45.0,"w":0},{"i":"146","c":"15","n":"Пиво Чайка Чорноморська, світле, 4,5%, 0,45 л","p":45.0,"w":0},{"i":"55","c":"9","n":"Пласт кальмара крабовий","p":152.0,"w":1},{"i":"222","c":"7","n":"Подвійне еспресо кава","p":50.0,"w":0},{"i":"216","c":"4","n":"Попкорн Big Bob 80г","p":0,"w":0},{"i":"120","c":"10","n":"Риба Густера В'ялена","p":50.0,"w":1},{"i":"121","c":"10","n":"Риба Плотва в'ялена","p":110.0,"w":1},{"i":"122","c":"10","n":"Риба Судак в'ялений","p":130.0,"w":1},{"i":"119","c":"10","n":"Риба Тарань В'ялена Ікряна","p":170.0,"w":1},{"i":"54","c":"10","n":"Риба-тригла","p":112.0,"w":1},{"i":"51","c":"10","n":"Рибна павутинка Біла","p":108.0,"w":1},{"i":"278","c":"10","n":"Рибна павутинка з перцем","p":108.0,"w":1},{"i":"236","c":"7","n":"Розмай Напій 0.5л з/б","p":0,"w":0},{"i":"171","c":"7","n":"Сік Джусік з трубочкою 200мл","p":0,"w":0},{"i":"291","c":"7","n":"Сік Капрісон з трубочкою","p":32.0,"w":0},{"i":"297","c":"13","n":"Сидр на розлив Грейпфрут Royal 0.5л","p":43.0,"w":0},{"i":"112","c":"13","n":"Сидр на розлив Грушевий Royal 0.5л","p":38.0,"w":0},{"i":"208","c":"13","n":"Сидр на розлив Просеко 0.5л","p":187.5,"w":0},{"i":"102","c":"13","n":"Сидр на розлив Фраголіно Б'янко Таїрово 0.5л","p":45.0,"w":0},{"i":"202","c":"10","n":"Синець в'ялений","p":90.0,"w":1},{"i":"217","c":"12","n":"Сир сулугуні сушений","p":0,"w":1},{"i":"90","c":"12","n":"Сир Чечель","p":0,"w":1},{"i":"92","c":"9","n":"Смуга Кальмара Перуанський","p":136.0,"w":1},{"i":"200","c":"7","n":"Соковий напій Jaffa газований 0.25л з/б","p":0,"w":0},{"i":"57","c":"11","n":"Соломка зі свинини з вишнею","p":130.0,"w":1},{"i":"182","c":"8","n":"Стаканчик пластик одноразовий 0.5л","p":3.0,"w":0},{"i":"74","c":"9","n":"Стружка кальмара зі смаком краба","p":140.0,"w":1},{"i":"201","c":"4","n":"Сублімовані ківі 90г","p":190.0,"w":0},{"i":"231","c":"4","n":"Сублімовані фрукти мікс","p":150.0,"w":0},{"i":"232","c":"4","n":"Сублімовані фрукти мікс з полуницею","p":200.0,"w":0},{"i":"204","c":"10","n":"Судак в'ялений","p":140.0,"w":1},{"i":"203","c":"10","n":"Тарань середня в'ялена ікряна","p":150.0,"w":1},{"i":"43","c":"10","n":"Тунець преміум білий","p":100.0,"w":1},{"i":"42","c":"10","n":"Тунець преміум з перцем","p":100.0,"w":1},{"i":"83","c":"12","n":"Фісташка вагова США","p":124.0,"w":1},{"i":"227","c":"7","n":"Флет вайт кава","p":75.0,"w":0},{"i":"247","c":"7","n":"Фруктовий напій OKF 0.5л без цукру","p":0,"w":0},{"i":"59","c":"11","n":"Хамон по-козацькі","p":160.0,"w":1},{"i":"37","c":"7","n":"Холодна кава Ice Coffee 0.25л","p":0,"w":0},{"i":"307","c":"7","n":"Чай в асортименті","p":40.0,"w":0},{"i":"292","c":"7","n":"Чай натуральний без цукру","p":0,"w":0},{"i":"163","c":"4","n":"Чипси Chipster Бекон 100г","p":58.0,"w":0},{"i":"14","c":"4","n":"Чипси Chipster Хвилясті BBQ 95г","p":58.0,"w":0},{"i":"12","c":"4","n":"Чипси Chipsters 60г","p":0,"w":0},{"i":"164","c":"4","n":"Чипси Chipsters Азійське Барбекю 100г","p":58.0,"w":0},{"i":"13","c":"4","n":"Чипси Chipsters Краб 100г","p":58.0,"w":0},{"i":"165","c":"4","n":"Чипси Chipsters Сир 100г","p":58.0,"w":0},{"i":"166","c":"4","n":"Чипси Chipsters Сметана та зелень 100г","p":58.0,"w":0},{"i":"15","c":"4","n":"Чипси Chipsters Удон 100г","p":58.0,"w":0},{"i":"239","c":"4","n":"Чипси Doritos 90г","p":0,"w":0},{"i":"272","c":"4","n":"Чипси Lays 120г","p":0,"w":0},{"i":"198","c":"4","n":"Чипси Lays 60г","p":0,"w":0},{"i":"199","c":"4","n":"Чипси Lays Max 95г","p":0,"w":0},{"i":"159","c":"4","n":"Чипси Lays MAX Рифлені Сметана та цибуля 95г","p":75.0,"w":0},{"i":"160","c":"4","n":"Чипси Lays Сальса 95г","p":75.0,"w":0},{"i":"161","c":"4","n":"Чипси Livity Рисові Морська Сіль 60г","p":60.0,"w":0},{"i":"32","c":"4","n":"Чипси Pringles 165г.","p":0,"w":0},{"i":"33","c":"4","n":"Чипси Pringles 40г.","p":0,"w":0},{"i":"262","c":"4","n":"Чипси Tortilla 90г","p":0,"w":0},{"i":"274","c":"4","n":"Чипси картопляні Long Chips","p":75.0,"w":0},{"i":"178","c":"12","n":"Чипси картопляні упаковка 100г","p":0,"w":0},{"i":"79","c":"11","n":"Чипси курячі","p":0,"w":1},{"i":"230","c":"11","n":"Чипси курячі Копчена слива","p":148.0,"w":1},{"i":"192","c":"4","n":"Чипси Люкс 105г","p":0,"w":0},{"i":"11","c":"4","n":"Чипси Люкс 125г","p":0,"w":0},{"i":"304","c":"4","n":"Чипси Люкс Ого 170г","p":0,"w":0},{"i":"94","c":"4","n":"Чипси Норі","p":48.0,"w":0},{"i":"197","c":"4","n":"Чипси рисові Livity 60г","p":0,"w":0},{"i":"187","c":"4","n":"Чипси яблучні 40г","p":0,"w":0},{"i":"49","c":"9","n":"Шанхайський Кальмар","p":108.0,"w":1},{"i":"244","c":"11","n":"Янтарна з перцем","p":100.0,"w":1}]};
+    return this._d;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const D = this.data();
+    const DEFMODS = { '306': ['Класичне', 'Солоне', 'Сир', 'Sweet Chilli'], '19': ['Краб', 'Сметана та зелень', 'Бекон'], '47': ['Бекон', 'Сир', 'Сіль', 'Холодець та хрін', 'Сметана та зелень', 'Мед та паприка'] };
+    const on = s.on || this.initOn();
+    const fmt = (n) => (n % 1 === 0 ? String(n) : String(n).replace('.', ',')).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₴';
+
+    const DEFM = { str: { on: false, v: '', l: 3 }, bit: { on: false, v: '', l: 3 }, den: { on: false, v: '', l: 3 } };
+    const dmm = s.draft.m || DEFM;
+    const setM = (k, patch) => {
+      const cur = this.state.draft.m || DEFM;
+      this.setState({ draft: { ...this.state.draft, m: { ...cur, [k]: { ...cur[k], ...patch } } } });
+    };
+    const metrics = [['str', 'Міцність'], ['bit', 'Гіркота'], ['den', 'Щільність']].map((x) => {
+      const k = x[0];
+      return {
+        label: x[1], id: 'm-' + k, on: dmm[k].on, v: dmm[k].v,
+        toggle: () => setM(k, { on: !dmm[k].on }),
+        onV: (e) => setM(k, { v: e.target.value }),
+        levels: [1, 2, 3, 4, 5].map((n) => ({ n, cls: dmm[k].l === n ? 'on' : '', active: dmm[k].l === n, pick: () => setM(k, { l: n }) })),
+        segs: [1, 2, 3, 4, 5].map((n) => ({ cls: n <= dmm[k].l ? 'on' : '' }))
+      };
+    });
+    const showToast = (t) => {
+      this.setState({ toast: t });
+      setTimeout(() => { this.setState({ toast: '' }); }, 1800);
+    };
+
+    const rowOf = (p) => {
+      const e = s.edits[p.i] || {};
+      const price = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : p.p;
+      const changed = e.price !== undefined && e.price !== '' && price !== p.p;
+      let priceText = p.p === 0 ? 'Ціна в Poster: —' : (p.w ? fmt(price) + ' за 100 г' : fmt(price));
+      if (changed) priceText = 'На сайті: ' + fmt(price) + ' · у Poster: ' + fmt(p.p);
+      return {
+        name: e.name || p.n,
+        isNew: !!s.newIds[p.i],
+        priceText,
+        on: !!on[p.i],
+        toggle: () => { const o = { ...(this.state.on || on) }; if (o[p.i]) delete o[p.i]; else o[p.i] = true; this.setState({ on: o }); },
+        edit: () => {
+          const ee = this.state.edits[p.i] || {};
+          this.setState({
+            editId: p.i, drOpen: true,
+            draft: { mods: ee.mods || (DEFMODS[p.i] || []).map((n) => ({ n, p: '', on: true })), name: ee.name || p.n, price: ee.price !== undefined ? ee.price : String(p.p).replace('.', ','), desc: ee.desc || '', m: ee.m || (p.c === '13' ? { str: { on: true, v: '', l: 0 }, bit: { on: true, v: '', l: 0 }, den: { on: true, v: '', l: 0 } } : JSON.parse(JSON.stringify(DEFM))) },
+            preset: ee.preset || (p.c === '13' || p.c === '15' || p.c === '7' ? 'beer' : (p.w ? 'snack' : 'piece'))
+          });
+        }
+      };
+    };
+
+    const cats = D.cats.map((c) => {
+      const items = D.prods.filter((p) => p.c === c.id);
+      const n = items.filter((p) => on[p.i]).length;
+      const open = s.openCat === c.id;
+      return {
+        name: c.n,
+        status: n === 0 ? 'Не на сайті · ' + c.c + ' товарів' : (n === c.c ? 'Усі ' + c.c + ' на сайті' : n + ' з ' + c.c + ' на сайті'),
+        cls: open ? 'open' : '',
+        isOpen: open,
+        all: n === c.c,
+        expand: () => this.setState({ openCat: open ? '' : c.id }),
+        toggle: () => {
+          const o = { ...(this.state.on || on) };
+          if (n === c.c) items.forEach((p) => { delete o[p.i]; }); else items.forEach((p) => { o[p.i] = true; });
+          this.setState({ on: o });
+        },
+        items: open ? items.map(rowOf) : []
+      };
+    });
+
+    const sync = () => {
+      this.setState({ syncing: true, syncMsg: '' });
+      setTimeout(() => {
+        const n = this.state.syncCount;
+        if (n >= 1) { this.setState({ syncing: false, syncCount: n + 1, syncMsg: 'Нових товарів у Poster немає. Останнє оновлення: щойно.' }); return; }
+        const demo = [{ i: 'new1', c: '13', n: '[Приклад] Новий сорт з Poster', p: 30, w: 0 }, { i: 'new2', c: '4', n: '[Приклад] Нові снеки з Poster', p: 120, w: 1 }];
+        const d = this.data();
+        const ids = {};
+        demo.forEach((p) => { d.prods.push(p); const c = d.cats.find((x) => x.id === p.c); if (c) c.c += 1; ids[p.i] = true; });
+        this.setState({ syncing: false, syncCount: 1, newIds: { ...this.state.newIds, ...ids }, openCat: '13', syncMsg: 'Знайдено нових товарів: ' + demo.length + '. Вони вимкнені, на сайті їх ще не видно. Знайди їх позначкою «Новий» і ввімкни тумблером.' });
+      }, 1300);
+    };
+    const newItems = D.prods.filter((p) => s.newIds[p.i]).map(rowOf);
+    const q = s.q.trim().toLowerCase();
+    const found = q ? D.prods.filter((p) => ((s.edits[p.i] && s.edits[p.i].name) || p.n).toLowerCase().indexOf(q) >= 0).slice(0, 40).map(rowOf) : [];
+
+    const TABS = [['products', 'Товари'], ['banners', 'Банери'], ['orders', 'Замовлення'], ['stats', 'Статистика'], ['site', 'Сайт']];
+    const tabs = TABS.map((t) => ({ label: t[1], cls: s.tab === t[0] ? 'on' : '', active: s.tab === t[0], pick: () => this.setState({ tab: t[0] }) }));
+
+    const PERIODS = [['day', 'Сьогодні'], ['week', 'Тиждень'], ['month', 'Місяць']];
+    const periods = PERIODS.map((t) => ({ label: t[1], cls: s.period === t[0] ? 'on' : '', active: s.period === t[0], pick: () => this.setState({ period: t[0] }) }));
+
+    const OL = { new: 'Нове', acc: 'Прийнято', done: 'Доставлено', cancel: 'Скасовано' };
+
+    const setMods = (fn) => this.setState({ draft: { ...this.state.draft, mods: fn((this.state.draft.mods || []).map((x) => ({ ...x }))) } });
+    const modRows = (s.draft.mods || []).map((m, i) => ({
+      n: m.n, p: m.p, on: m.on,
+      onN: (e) => setMods((a) => { a[i].n = e.target.value; return a; }),
+      onP: (e) => setMods((a) => { a[i].p = e.target.value; return a; }),
+      toggle: () => setMods((a) => { a[i].on = !a[i].on; return a; }),
+      remove: () => setMods((a) => a.filter((x, j) => j !== i))
+    }));
+    const cur = D.prods.find((p) => p.i === s.editId) || { n: '', p: 0, w: 0 };
+    const PRESETS = [['beer', '0,5 · 1 · 1,5 · 2 · 3 л'], ['snack', '50 · 100 · 150 · 200 г + своя вага'], ['piece', '1 шт']];
+    const badges = [['', 'Без бейджа'], ['new', 'Новинка'], ['hit', 'Хіт продажу']].map((u) => ({ label: u[1], cls: (s.draft.badge || '') === u[0] ? 'on' : '', active: (s.draft.badge || '') === u[0], pick: () => this.setState({ draft: { ...this.state.draft, badge: u[0] } }) }));
+    const presets = PRESETS.map((u) => ({ label: u[1], cls: s.preset === u[0] ? 'on' : '', active: s.preset === u[0], pick: () => this.setState({ preset: u[0] }) }));
+    const dset = (k) => (e) => this.setState({ draft: { ...this.state.draft, [k]: e.target.value } });
+    const sset = (k) => (e) => this.setState({ site: { ...this.state.site, [k]: e.target.value } });
+
+    return {
+      tabs, cats, found, metrics,
+      taraList: ['0.5', '1', '1.5', '2', '3'].map((v) => ({ id: 'tr' + v.replace('.', '_'), label: v.replace('.', ',') + ' л', value: s.tara[v], on: (e) => this.setState({ tara: { ...this.state.tara, [v]: e.target.value } }) })),
+      isBanners: s.tab === 'banners',
+      banners: s.banners.map((b, i) => ({
+        n: i + 1, on: b.on, title: b.title, sub: b.sub,
+        toggle: () => this.upB(i, { on: !this.state.banners[i].on }),
+        onTitle: (e) => this.upB(i, { title: e.target.value }),
+        onSub: (e) => this.upB(i, { sub: e.target.value }),
+        remove: () => this.setState({ banners: this.state.banners.filter((x, j) => j !== i) }),
+        kinds: [['', 'Без лейбла'], ['Новинка', 'Новинка'], ['Акція', 'Акція'], ['Новини', 'Новини']].map((k) => ({ label: k[1], cls: (b.kind || '') === k[0] ? 'on' : '', active: (b.kind || '') === k[0], pick: () => this.upB(i, { kind: k[0] }) }))
+      })),
+      first: s.first,
+      onFirstT: (e) => this.setState({ first: { ...this.state.first, title: e.target.value } }),
+      onFirstS: (e) => this.setState({ first: { ...this.state.first, sub: e.target.value } }),
+      addBanner: () => this.setState({ banners: this.state.banners.concat([{ kind: 'Новинка', title: '', sub: '', on: true }]) }),
+      saveBanners: () => showToast('Банери збережено'),
+      hasSearch: q !== '', noSearch: q === '', noFound: q !== '' && found.length === 0,
+      q: s.q,
+      onQ: (e) => this.setState({ q: e.target.value }),
+      isProducts: s.tab === 'products', isOrders: s.tab === 'orders', isStats: s.tab === 'stats', isSite: s.tab === 'site',
+      periods,
+      ordCls: s.ord, ordLabel: OL[s.ord],
+      ordAccept: () => this.setState({ ord: 'acc' }),
+      ordDone: () => this.setState({ ord: 'done' }),
+      ordCancel: () => this.setState({ ord: 'cancel' }),
+      site: s.site,
+      onHours: sset('hours'), onZone: sset('zone'), onPrice: sset('price'), onMin: sset('min'), onPhone: sset('phone'), onAddr: sset('addr'), onIg: sset('ig'), onTt: sset('tt'), onTh: sset('th'), onMaps: sset('maps'),
+      tgOn: s.tgOn, onTg: () => this.setState({ tgOn: !this.state.tgOn }),
+      saveSite: () => showToast('Збережено'),
+      drCls: s.drOpen ? 'open' : '',
+      closeEdit: () => this.setState({ drOpen: false }),
+      ed: {
+        title: 'Редагування товару',
+        name: s.draft.name || '', price: s.draft.price || '', desc: s.draft.desc || '',
+        str: s.draft.str || '', den: s.draft.den || '', prod: s.draft.prod || '',
+        posterPrice: cur.p === 0 ? '—' : fmt(cur.p),
+        unitHint: cur.w ? 'за 100 г' : 'за одиницю в Poster'
+      },
+      onEName: dset('name'), onEPrice: dset('price'), onEDesc: dset('desc'), onEStr: dset('str'), onEDen: dset('den'), onEProd: dset('prod'),
+      resetPrice: () => this.setState({ draft: { ...this.state.draft, price: String(cur.p).replace('.', ',') } }),
+      presets,
+      modRows,
+      addMod: () => setMods((a) => a.concat([{ n: '', p: '', on: true }])),
+      badges,
+      newItems, hasNew: newItems.length > 0,
+      sync, syncing: s.syncing, syncCls: s.syncing ? 'spin' : '', syncLabel: s.syncing ? 'Оновлюю з Poster…' : 'Синхронізувати з Poster', hasSyncMsg: s.syncMsg !== '', syncMsg: s.syncMsg,
+      saveEdit: () => {
+        const edits = { ...this.state.edits, [s.editId]: { ...this.state.draft, preset: this.state.preset } };
+        this.setState({ edits, drOpen: false });
+        showToast('Товар збережено');
+      },
+      toastCls: s.toast ? 'show' : '',
+      toastText: s.toast || ' '
+    };
+  }
+}
+
+return Component;
+})();
+dcMount(Comp,document.getElementById('root'));
+</script>
+</body>
+</html>
