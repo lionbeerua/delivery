@@ -261,23 +261,27 @@ body{background:#000}
 
 <sc-if value="{{isOrders}}" hint-placeholder-val="{{ false }}">
 <section class="pane">
-<p class="note">Нові замовлення приходять сюди й у Telegram. Статус можна змінити тут або кнопкою в повідомленні. Нижче приклад картки, щоб показати вигляд. Це не справжнє замовлення.</p>
+<p class="note">Нові замовлення приходять сюди й у Telegram. Список оновлюється сам кожні 30 секунд. Статус можна змінити тут або кнопкою в повідомленні.</p>
+<sc-if value="{{noOrders}}" hint-placeholder-val="{{ false }}"><div class="blk lg"><p class="note" style="margin:0">{{ordersMsg}}</p></div></sc-if>
+<sc-for list="{{orderCards}}" as="o" hint-placeholder-count="2">
 <div class="ord lg">
-<div class="ord-top"><span class="badge {{ordCls}}">{{ordLabel}}</span><span class="sample">Приклад</span></div>
+<div class="ord-top"><span class="badge {{o.cls}}">{{o.label}}</span><span class="sample">№{{o.n}} · {{o.time}}</span></div>
 <div style="margin-top:14px">
-<div class="ln"><span>Клієнт</span><span>[Ім'я], [телефон]</span></div>
-<div class="ln"><span>Адреса</span><span>[адреса]</span></div>
-<div class="ln"><span>Вайсбург Лагер Умань світле, 2 л × 1</span><span>204 ₴</span></div>
-<div class="ln"><span>Земан Пшеничне нефільтроване, 1 л × 1</span><span>90 ₴</span></div>
-<div class="ln"><span>Оплата</span><span>Готівкою кур'єру</span></div>
-<div class="ln"><span>Разом</span><span>294 ₴</span></div>
+<div class="ln"><span>{{o.modeText}}</span><span>{{o.name}}</span></div>
+<div class="ln"><span>Телефон</span><span><a href="{{o.tel}}" style="color:var(--gold)">{{o.phone}}</a></span></div>
+<div class="ln"><span>{{o.whereLabel}}</span><span>{{o.where}}</span></div>
+<sc-for list="{{o.lines}}" as="l" hint-placeholder-count="2"><div class="ln"><span>{{l.t}}</span><span>{{l.s}}</span></div></sc-for>
+<sc-if value="{{o.hasNote}}" hint-placeholder-val="{{ false }}"><div class="ln"><span>Коментар</span><span>{{o.note}}</span></div></sc-if>
+<div class="ln"><span>Оплата</span><span>{{o.pay}}</span></div>
+<div class="ln"><span>Разом</span><span>{{o.total}}</span></div>
 </div>
 <div class="acts">
-<button class="act p" onClick="{{ordAccept}}">Прийняти</button>
-<button class="act" onClick="{{ordDone}}">Доставлено</button>
-<button class="act" onClick="{{ordCancel}}">Скасувати</button>
+<button class="act p" onClick="{{o.acc}}">Прийняти</button>
+<button class="act" onClick="{{o.done}}">Видано</button>
+<button class="act" onClick="{{o.cancel}}">Скасувати</button>
 </div>
 </div>
+</sc-for>
 </section>
 </sc-if>
 
@@ -289,19 +293,27 @@ body{background:#000}
 </sc-for>
 </div>
 <div class="tiles">
-<div class="tile lg"><span>Замовлень</span><b>—</b></div>
-<div class="tile lg"><span>Виручка</span><b>—</b></div>
-<div class="tile lg"><span>Середній чек</span><b>—</b></div>
-<div class="tile lg"><span>Скасовано</span><b>—</b></div>
+<div class="tile lg"><span>Замовлень</span><b>{{stCount}}</b></div>
+<div class="tile lg"><span>Виручка</span><b>{{stRev}}</b></div>
+<div class="tile lg"><span>Середній чек</span><b>{{stAvg}}</b></div>
+<div class="tile lg"><span>Скасовано</span><b>{{stCancel}}</b></div>
 </div>
 <div class="blk lg">
-<h2>Замовлення за днями</h2>
-<div class="bars" aria-hidden="true"><i style="height:35%"></i><i style="height:60%"></i><i style="height:45%"></i><i style="height:80%"></i><i style="height:55%"></i><i style="height:95%"></i><i style="height:70%"></i></div>
-<p class="note" style="margin:12px 0 0">Так виглядатиме графік. Дані з'являться після перших замовлень.</p>
+<h2>{{barsTitle}}</h2>
+<div class="bars"><sc-for list="{{bars}}" as="b" hint-placeholder-count="7"><i title="{{b.tip}}" style="{{b.st}}"></i></sc-for></div>
+<p class="note" style="margin:12px 0 0">{{barsNote}}</p>
 </div>
 <div class="blk lg">
 <h2>Топ товарів</h2>
-<p class="note" style="margin:0">Тут будуть найпопулярніші позиції й розподіл за оплатою: готівка чи картка.</p>
+<sc-for list="{{topItems}}" as="x" hint-placeholder-count="3"><div class="ln"><span>{{x.t}}</span><span>{{x.s}}</span></div></sc-for>
+<p class="note" style="margin:8px 0 0">{{topNote}}</p>
+</div>
+<div class="blk lg">
+<h2>Оплата і тип</h2>
+<div class="ln"><span>Готівка</span><span>{{stCash}}</span></div>
+<div class="ln"><span>Картка / переказ</span><span>{{stCard}}</span></div>
+<div class="ln"><span>Доставка</span><span>{{stDel}}</span></div>
+<div class="ln"><span>Самовивіз</span><span>{{stPick}}</span></div>
 </div>
 </section>
 </sc-if>
@@ -530,7 +542,7 @@ class Component extends DCLogic {
     drOpen: false,
     draft: {},
     preset: 'beer',
-    ord: 'new',
+    orders: [], ordersLoaded: false, ordersErr: false,
     period: 'week',
     toast: '',
     syncing: false,
@@ -544,7 +556,26 @@ class Component extends DCLogic {
     site: { hours: '', zone: '', price: '', min: '', phone: '+380', addr: '', ig: 'https://www.instagram.com/lionbeer.ua/', tt: 'https://www.tiktok.com/@lionbeer.ua', th: 'https://www.threads.com/@lionbeer.ua', maps: 'https://maps.app.goo.gl/7LUDdEkn1Xc5o8Er9' }
   };
 
+  loadOrders() {
+    fetch('/api/admin/orders?limit=300', { credentials: 'same-origin', cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((a) => this.setState({ orders: Array.isArray(a) ? a : [], ordersLoaded: true, ordersErr: false }))
+      .catch(() => this.setState({ ordersLoaded: true, ordersErr: true }));
+  }
+
+  setOrd(id, status) {
+    const prev = this.state.orders;
+    this.setState({ orders: prev.map((o) => (o.id === id ? { ...o, status } : o)) });
+    fetch('/api/admin/orders/status', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })
+      .then((r) => { if (!r.ok) throw 0; })
+      .catch(() => { this.setState({ orders: prev }); });
+  }
+
+  componentWillUnmount() { if (this._poll) clearInterval(this._poll); }
+
   componentDidMount() {
+    this.loadOrders();
+    this._poll = setInterval(() => { if (this.state.tab === 'orders' || this.state.tab === 'stats') this.loadOrders(); }, 30000);
     if (!this.state.on) this.setState({ on: this.initOn() });
     fetch('/api/admin/catalog', { credentials: 'same-origin' })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -702,12 +733,55 @@ class Component extends DCLogic {
     const found = q ? D.prods.filter((p) => ((s.edits[p.i] && s.edits[p.i].name) || p.n).toLowerCase().indexOf(q) >= 0).slice(0, 40).map(rowOf) : [];
 
     const TABS = [['products', 'Товари'], ['banners', 'Банери'], ['orders', 'Замовлення'], ['stats', 'Статистика'], ['site', 'Сайт']];
-    const tabs = TABS.map((t) => ({ label: t[1], cls: s.tab === t[0] ? 'on' : '', active: s.tab === t[0], pick: () => this.setState({ tab: t[0] }) }));
+    const tabs = TABS.map((t) => ({ label: t[1], cls: s.tab === t[0] ? 'on' : '', active: s.tab === t[0], pick: () => { this.setState({ tab: t[0] }); if (t[0] === 'orders' || t[0] === 'stats') this.loadOrders(); } }));
 
     const PERIODS = [['day', 'Сьогодні'], ['week', 'Тиждень'], ['month', 'Місяць']];
     const periods = PERIODS.map((t) => ({ label: t[1], cls: s.period === t[0] ? 'on' : '', active: s.period === t[0], pick: () => this.setState({ period: t[0] }) }));
 
-    const OL = { new: 'Нове', acc: 'Прийнято', done: 'Доставлено', cancel: 'Скасовано' };
+    const OL = { new: 'Нове', acc: 'Прийнято', done: 'Видано', cancel: 'Скасовано' };
+    const fmtN = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₴';
+    const pad2 = (n) => (n < 10 ? '0' : '') + n;
+    const fmtT = (ts) => { const d = new Date(ts); return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
+    const ORD = s.orders || [];
+    const orderCards = ORD.map((o) => ({
+      n: o.n, cls: o.status || 'new', label: OL[o.status || 'new'], time: fmtT(o.t),
+      modeText: o.mode === 'pickup' ? 'Самовивіз' : 'Доставка', name: o.name, phone: o.phone, tel: 'tel:' + String(o.phone).replace(/[^\d+]/g, ''),
+      whereLabel: o.mode === 'pickup' ? 'Забрати' : 'Адреса', where: o.mode === 'pickup' ? o.when : (o.city + ', ' + o.address),
+      lines: o.lines.map((l) => ({ t: l.name + ', ' + l.vol + ' × ' + l.qty, s: l.sum })).concat(o.tara.map((l) => ({ t: 'Тара, ' + l.vol + ' × ' + l.qty, s: l.sum }))),
+      hasNote: !!o.note, note: o.note, pay: o.payText + (o.change ? ' · решта з ' + o.change : ''), total: fmtN(o.total),
+      acc: () => this.setOrd(o.id, 'acc'), done: () => this.setOrd(o.id, 'done'), cancel: () => this.setOrd(o.id, 'cancel')
+    }));
+    const noOrders = ORD.length === 0;
+    const ordersMsg = !s.ordersLoaded ? 'Завантажую…' : s.ordersErr ? 'Не вдалося завантажити замовлення. Оновіть сторінку.' : 'Замовлень поки немає. Перше зʼявиться тут і в Telegram.';
+    // статистика
+    const now = new Date();
+    const startDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const DAYMS = 86400000;
+    const nDays = s.period === 'month' ? 30 : 7;
+    const from = s.period === 'day' ? startDay : startDay - (nDays - 1) * DAYMS;
+    const inP = ORD.filter((o) => o.t >= from);
+    const okO = inP.filter((o) => o.status !== 'cancel');
+    const rev = okO.reduce((a, o) => a + (o.total || 0), 0);
+    const stCount = String(inP.length), stRev = okO.length ? fmtN(rev) : '0 ₴', stAvg = okO.length ? fmtN(rev / okO.length) : '—';
+    const stCancel = String(inP.length - okO.length);
+    let bars = [];
+    if (s.period === 'day') {
+      for (let h = 0; h < 24; h++) bars.push({ v: 0, tip: pad2(h) + ':00' });
+      okO.forEach((o) => { bars[new Date(o.t).getHours()].v += 1; });
+    } else {
+      for (let k = 0; k < nDays; k++) { const d = new Date(startDay - (nDays - 1 - k) * DAYMS); bars.push({ v: 0, tip: pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) }); }
+      okO.forEach((o) => { const k = nDays - 1 - Math.floor((startDay - o.t) / DAYMS + (o.t >= startDay ? -0.0001 : 0.9999)); if (o.t >= startDay) bars[nDays - 1].v += 1; else { const kk = nDays - Math.ceil((startDay - o.t) / DAYMS) - 1; if (bars[kk]) bars[kk].v += 1; } });
+    }
+    const mx = Math.max(1, ...bars.map((b) => b.v));
+    bars = bars.map((b) => ({ tip: b.tip + ': ' + b.v, st: 'height:' + Math.max(b.v ? 8 : 3, Math.round((b.v / mx) * 100)) + '%;border:none;background:' + (b.v ? 'var(--gold)' : 'rgba(255,255,255,.12)') }));
+    const barsTitle = s.period === 'day' ? 'Замовлення по годинах' : 'Замовлення за днями';
+    const barsNote = okO.length ? 'Найвищий стовпчик: ' + mx + ' зам.' : 'Дані зʼявляться після перших замовлень.';
+    const agg = {};
+    okO.forEach((o) => o.lines.forEach((l) => { const k = l.name + ', ' + l.vol; agg[k] = (agg[k] || 0) + l.qty; }));
+    const topItems = Object.keys(agg).sort((a, b) => agg[b] - agg[a]).slice(0, 8).map((k) => ({ t: k, s: agg[k] + ' шт' }));
+    const topNote = topItems.length ? '' : 'Тут будуть найпопулярніші позиції.';
+    const cnt = (f) => String(okO.filter(f).length);
+    const stCash = cnt((o) => o.pay !== 'card'), stCard = cnt((o) => o.pay === 'card'), stDel = cnt((o) => o.mode !== 'pickup'), stPick = cnt((o) => o.mode === 'pickup');
 
     const setMods = (fn) => this.setState({ draft: { ...this.state.draft, mods: fn((this.state.draft.mods || []).map((x) => ({ ...x }))) } });
     const modRows = (s.draft.mods || []).map((m, i) => ({
@@ -751,10 +825,7 @@ class Component extends DCLogic {
       onQ: (e) => this.setState({ q: e.target.value }),
       isProducts: s.tab === 'products', isOrders: s.tab === 'orders', isStats: s.tab === 'stats', isSite: s.tab === 'site',
       periods,
-      ordCls: s.ord, ordLabel: OL[s.ord],
-      ordAccept: () => this.setState({ ord: 'acc' }),
-      ordDone: () => this.setState({ ord: 'done' }),
-      ordCancel: () => this.setState({ ord: 'cancel' }),
+      orderCards, noOrders, ordersMsg, stCount, stRev, stAvg, stCancel, bars, barsTitle, barsNote, topItems, topNote, stCash, stCard, stDel, stPick,
       site: s.site,
       onHours: sset('hours'), onZone: sset('zone'), onPrice: sset('price'), onMin: sset('min'), onPhone: sset('phone'), onAddr: sset('addr'), onIg: sset('ig'), onTt: sset('tt'), onTh: sset('th'), onMaps: sset('maps'),
       tgOn: s.tgOn, onTg: () => this.setState({ tgOn: !this.state.tgOn }),

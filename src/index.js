@@ -61,6 +61,94 @@ function cleanBanners(list) {
   }));
 }
 
+// ---------- Замовлення і Telegram ----------
+const STATUS_TXT = { new: '🆕 Нове', acc: '✅ Прийнято', done: '📦 Доставлено / видано', cancel: '❌ Скасовано' };
+const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const money = (n) => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₴';
+
+function cleanOrder(o) {
+  if (!o || typeof o !== 'object') return null;
+  const str = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
+  const phone = str(o.phone, 20);
+  if (phone.replace(/\D/g, '').length < 12 || str(o.name, 60).length < 2) return null;
+  if (!Array.isArray(o.lines) || o.lines.length === 0 || o.lines.length > 60) return null;
+  const mode = o.mode === 'pickup' ? 'pickup' : 'delivery';
+  return {
+    name: str(o.name, 60), phone, mode,
+    city: str(o.city, 40), address: str(o.address, 200), note: str(o.note, 300),
+    when: str(o.when, 40), pay: o.pay === 'card' ? 'card' : 'cash', payText: str(o.payText, 60), change: str(o.change, 20),
+    lines: o.lines.map((l) => ({ name: str(l.name, 120), vol: str(l.vol, 30), qty: Math.min(99, Number(l.qty) || 1), sum: str(l.sum, 20) })),
+    tara: (Array.isArray(o.tara) ? o.tara : []).slice(0, 10).map((l) => ({ vol: str(l.vol, 20), qty: Math.min(99, Number(l.qty) || 1), sum: str(l.sum, 20) })),
+    total: Math.max(0, Math.min(1000000, Number(o.total) || 0))
+  };
+}
+
+function orderText(o, status) {
+  const L = [];
+  L.push('<b>Замовлення №' + o.n + '</b> · ' + (o.mode === 'pickup' ? '🏪 Самовивіз' : '🚚 Доставка'));
+  L.push('👤 ' + esc(o.name) + ', ' + esc(o.phone));
+  if (o.mode === 'pickup') L.push('🕒 Забрати: ' + esc(o.when));
+  else L.push('📍 ' + esc(o.city) + ', ' + esc(o.address));
+  L.push('');
+  o.lines.forEach((l) => L.push('• ' + esc(l.name) + ', ' + esc(l.vol) + ' × ' + l.qty + ' = ' + esc(l.sum)));
+  o.tara.forEach((l) => L.push('• Тара, ' + esc(l.vol) + ' × ' + l.qty + ' = ' + esc(l.sum)));
+  L.push('');
+  L.push('💰 Разом: <b>' + money(o.total) + '</b> · ' + esc(o.payText));
+  if (o.change) L.push('Решта з: ' + esc(o.change));
+  if (o.note) L.push('💬 ' + esc(o.note));
+  if (status) L.push('\n' + STATUS_TXT[status]);
+  return L.join('\n');
+}
+
+const tgKeyboard = (id) => ({ inline_keyboard: [[{ text: 'Прийняти', callback_data: 'acc:' + id }, { text: 'Видано', callback_data: 'done:' + id }, { text: 'Скасувати', callback_data: 'cancel:' + id }]] });
+
+async function tg(env, method, body) {
+  const r = await fetch('https://api.telegram.org/bot' + env.TG_TOKEN + '/' + method, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  return r.json().catch(() => ({}));
+}
+
+async function notifyTelegram(env, o) {
+  if (!env.TG_TOKEN || !env.TG_CHAT_ID) return;
+  const cat = env.KV ? await env.KV.get('catalog', 'json') : null;
+  if (cat && cat.tgOn === false) return;
+  const res = await tg(env, 'sendMessage', { chat_id: env.TG_CHAT_ID, text: orderText(o), parse_mode: 'HTML', reply_markup: tgKeyboard(o.id) });
+  if (res && res.result && res.result.message_id) {
+    o.tgMsg = res.result.message_id;
+    await env.KV.put('order:' + o.id, JSON.stringify(o), { expirationTtl: 60 * 60 * 24 * 180 });
+  }
+}
+
+async function setStatus(env, id, status) {
+  if (!STATUS_TXT[status] || status === 'new') return null;
+  const raw = await env.KV.get('order:' + id);
+  if (!raw) return null;
+  const o = JSON.parse(raw);
+  o.status = status;
+  o.updated = Date.now();
+  await env.KV.put('order:' + id, JSON.stringify(o), { expirationTtl: 60 * 60 * 24 * 180 });
+  if (env.TG_TOKEN && env.TG_CHAT_ID && o.tgMsg) {
+    await tg(env, 'editMessageText', { chat_id: env.TG_CHAT_ID, message_id: o.tgMsg, text: orderText(o, status), parse_mode: 'HTML', reply_markup: tgKeyboard(o.id) }).catch(() => {});
+  }
+  return o;
+}
+
+async function listOrders(env, limit) {
+  const keys = [];
+  let cursor;
+  do {
+    const r = await env.KV.list({ prefix: 'order:', cursor, limit: 1000 });
+    keys.push(...r.keys.map((k) => k.name));
+    cursor = r.list_complete ? null : r.cursor;
+  } while (cursor && keys.length < 3000);
+  keys.sort().reverse();
+  const out = [];
+  for (const k of keys.slice(0, limit)) {
+    const v = await env.KV.get(k, 'json');
+    if (v) out.push(v);
+  }
+  return out;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -72,6 +160,35 @@ export default {
       const buf = await env.KV.get('img:' + im[1], 'arrayBuffer');
       if (!buf) return new Response('Не знайдено', { status: 404 });
       return new Response(buf, { headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable' } });
+    }
+    // Нове замовлення від клієнта
+    if (url.pathname === '/api/order' && request.method === 'POST') {
+      if (!env.KV) return json({ error: 'Сервер замовлень не налаштований' }, 503);
+      const o = cleanOrder(await request.json().catch(() => null));
+      if (!o) return json({ error: 'Перевірте дані замовлення' }, 400);
+      const rl = 'rl:' + o.phone.replace(/\D/g, '');
+      if (await env.KV.get(rl)) return json({ error: 'Забагато замовлень поспіль. Зачекайте хвилину або зателефонуйте нам' }, 429);
+      await env.KV.put(rl, '1', { expirationTtl: 60 });
+      const n = (Number(await env.KV.get('ordn')) || 0) + 1;
+      await env.KV.put('ordn', String(n));
+      o.n = n;
+      o.id = String(Date.now()) + '-' + n;
+      o.status = 'new';
+      o.t = Date.now();
+      await env.KV.put('order:' + o.id, JSON.stringify(o), { expirationTtl: 60 * 60 * 24 * 180 });
+      try { await notifyTelegram(env, o); } catch (e) { /* замовлення вже збережене */ }
+      return json({ ok: true, n });
+    }
+    // Кнопки в Telegram (адресу вебхука знає тільки власниця)
+    if (env.TG_SECRET && url.pathname === '/api/tg/' + env.TG_SECRET && request.method === 'POST') {
+      const u = await request.json().catch(() => null);
+      const cb = u && u.callback_query;
+      if (cb && cb.data && String(cb.message && cb.message.chat && cb.message.chat.id) === String(env.TG_CHAT_ID)) {
+        const [st, id] = String(cb.data).split(':');
+        const o = await setStatus(env, id, st);
+        await tg(env, 'answerCallbackQuery', { callback_query_id: cb.id, text: o ? STATUS_TXT[st] : 'Замовлення не знайдено' }).catch(() => {});
+      }
+      return json({ ok: true });
     }
     // Каталог для сайту: що увімкнено, ціни, описи, бейджі
     if (url.pathname === '/api/catalog' && request.method === 'GET') {
@@ -123,6 +240,16 @@ export default {
         if (!c || typeof c !== 'object' || !c.on || txt.length > 400000) return json({ error: 'bad' }, 400);
         await env.KV.put('catalog', JSON.stringify({ on: c.on, edits: c.edits || {}, tara: c.tara || {}, site: c.site || {}, tgOn: c.tgOn !== false }));
         return json({ ok: true });
+      }
+      if (url.pathname === '/api/admin/orders' && request.method === 'GET') {
+        if (!env.KV) return json([], 200);
+        const lim = Math.min(300, Number(url.searchParams.get('limit')) || 60);
+        return json(await listOrders(env, lim), 200, { 'Cache-Control': 'no-store' });
+      }
+      if (url.pathname === '/api/admin/orders/status' && request.method === 'POST') {
+        const b = await request.json().catch(() => null);
+        const o = b && (await setStatus(env, String(b.id), String(b.status)));
+        return o ? json(o) : json({ error: 'not found' }, 404);
       }
       if (url.pathname === '/api/admin/banners' && request.method === 'GET') return json(await getBanners(env), 200, { 'Cache-Control': 'no-store' });
       if (url.pathname === '/api/admin/banners' && request.method === 'POST') {

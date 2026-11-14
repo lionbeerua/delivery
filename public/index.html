@@ -804,6 +804,7 @@ button:active{transform:scale(.95);transition-duration:.12s}
 <sc-if value="{{noSlots}}" hint-placeholder-val="{{ false }}"><p class="pay-s">На сьогодні вільного часу вже немає. Оберіть «Якнайшвидше» або замовте завтра.</p></sc-if>
 </div>
 </sc-if>
+<sc-if value="{{hasShopAddr}}" hint-placeholder-val="{{ false }}"><p class="pay-s" style="margin-top:14px">Адреса: {{shopAddr}}</p></sc-if>
 <a class="pk-map" href="{{mapsHref}}" target="_blank" rel="noopener">Показати магазин на карті</a>
 <div class="field">
 <label for="f-note2">Коментар (необов'язково)</label>
@@ -822,7 +823,7 @@ button:active{transform:scale(.95);transition-duration:.12s}
 </button>
 <button class="pay {{cardCls}}" onClick="{{pickCard}}" aria-pressed="{{isCard}}">
 <span class="pay-i"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg></span>
-<span><div class="pay-t">Переказом на карту</div><div class="pay-s">Реквізити покажемо після оформлення</div></span>
+<span><div class="pay-t">{{cardT}}</div><div class="pay-s">{{cardS}}</div></span>
 <span class="radio"></span>
 </button>
 </div>
@@ -842,7 +843,8 @@ button:active{transform:scale(.95);transition-duration:.12s}
 <div class="cobar">
 <div class="cobar-in lg">
 <sc-if value="{{notReady}}" hint-placeholder-val="{{ true }}"><p class="hint">{{missing}}</p></sc-if>
-<button class="cta" disabled="{{notReady}}" onClick="{{submit}}">Підтвердити замовлення · {{totalText}}</button>
+<sc-if value="{{hasSendErr}}" hint-placeholder-val="{{ false }}"><p class="hint">{{sendErr}}</p></sc-if>
+<button class="cta" disabled="{{notReady}}" onClick="{{submit}}">{{submitLabel}}</button>
 </div>
 </div>
 </div>
@@ -854,6 +856,7 @@ button:active{transform:scale(.95);transition-duration:.12s}
 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1B1403" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
 </div>
 <h1>Дякуємо за замовлення!</h1>
+<sc-if value="{{hasOrderNo}}" hint-placeholder-val="{{ false }}"><p class="l" style="margin-bottom:6px">Номер замовлення: №{{orderNo}}</p></sc-if>
 <p class="l">{{doneLead}}</p>
 
 <div class="blk lg sum">
@@ -875,12 +878,13 @@ button:active{transform:scale(.95);transition-duration:.12s}
 </sc-if>
 <sc-if value="{{isPickup}}" hint-placeholder-val="{{ false }}">
 <div class="sl"><span>Забрати</span><span>{{whenText}}</span></div>
+<sc-if value="{{hasShopAddr}}" hint-placeholder-val="{{ false }}"><div class="sl"><span>Адреса</span><span>{{shopAddr}}</span></div></sc-if>
 <div class="sl"><span>Де</span><span><a class="pk-lnk" href="{{mapsHref}}" target="_blank" rel="noopener">Lion Beer на карті</a></span></div>
 </sc-if>
 <div class="sl"><span>Оплата</span><span>{{payText}}</span></div>
 </div>
 
-<sc-if value="{{isCard}}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{showXfer}}" hint-placeholder-val="{{ false }}">
 <div class="xfer">
 <b>Переказ на карту</b>
 <p>Сума до переказу: {{totalText}}<br>Картка: [ВСТАВ НОМЕР КАРТКИ]<br>Отримувач: [ВСТАВ ПІБ]</p>
@@ -1008,6 +1012,9 @@ class Component extends DCLogic {
     flashId: null,
     bump: false,
     slide: 0,
+    sending: false,
+    sendErr: '',
+    orderNo: '',
     banners: null,
     catalog: null,
     theme: '0',
@@ -1312,12 +1319,15 @@ class Component extends DCLogic {
       };
     });
 
+    const ST = (s.catalog && s.catalog.site) || {};
+    const handleOf = (u, d) => { const m = has(u) && u.trim().match(/@?([\w.]+)\/?(?:\?.*)?$/); return m ? '@' + m[1] : d; };
+    const has = (v) => typeof v === 'string' && v.trim() !== '';
     const MENU = [
-      { id: 'delivery', title: 'Доставка', rows: ['Графік роботи: [ВСТАВ дні та години]', 'Зона доставки: [ВСТАВ]', 'Вартість доставки: [ВСТАВ]', 'Мінімальна сума замовлення: [ВСТАВ]'] },
-      { id: 'pay', title: 'Оплата', rows: ["Готівкою кур'єру під час отримання.", 'Переказом на карту: реквізити покажемо після оформлення замовлення.', 'Онлайн-оплати на сайті немає.'] },
+      { id: 'delivery', title: 'Доставка', rows: [has(ST.hours) && 'Графік роботи: ' + ST.hours.trim(), has(ST.zone) && 'Зона доставки: ' + ST.zone.trim(), has(ST.price) && 'Вартість доставки: ' + ST.price.trim(), has(ST.min) && 'Мінімальна сума замовлення: ' + ST.min.trim()].filter(Boolean) },
+      { id: 'pay', title: 'Оплата', rows: ["Доставка: готівкою кур'єру під час отримання.", 'Доставка: переказом на карту, реквізити покажемо після оформлення замовлення.', 'Самовивіз: готівкою або карткою в магазині.', 'Онлайн-оплати на сайті немає.'] },
       { id: 'age', title: 'Вікові обмеження', rows: ['Продаж алкогольних напоїв особам до 18 років заборонений.'] },
-      { id: 'contacts', title: 'Контакти', rows: ['Телефон: [ВСТАВ]', 'Адреса магазину: [ВСТАВ]'] }
-    ];
+      { id: 'contacts', title: 'Контакти', rows: [has(ST.phone) && ST.phone.trim().length > 5 && 'Телефон: ' + ST.phone.trim(), has(ST.addr) && 'Адреса магазину: ' + ST.addr.trim()].filter(Boolean) }
+    ].filter((m) => m.rows.length > 0);
     const menuSecs = MENU.map((m) => ({
       title: m.title,
       cls: s.menuSec === m.id ? 'open' : '',
@@ -1337,9 +1347,9 @@ class Component extends DCLogic {
     const goSlide = (i) => { this._last = Date.now(); this.setState({ slide: i }); };
 
     const socials = [
-      { name: 'Instagram', handle: '@lionbeer.ua', href: 'https://www.instagram.com/lionbeer.ua/', isIg: true, isTt: false, isTh: false },
-      { name: 'TikTok', handle: '@lionbeer.ua', href: 'https://www.tiktok.com/@lionbeer.ua', isIg: false, isTt: true, isTh: false },
-      { name: 'Threads', handle: '@lionbeer.ua', href: 'https://www.threads.com/@lionbeer.ua', isIg: false, isTt: false, isTh: true }
+      { name: 'Instagram', handle: handleOf(ST.ig, '@lionbeer.ua'), href: has(ST.ig) ? ST.ig.trim() : 'https://www.instagram.com/lionbeer.ua/', isIg: true, isTt: false, isTh: false },
+      { name: 'TikTok', handle: handleOf(ST.tt, '@lionbeer.ua'), href: has(ST.tt) ? ST.tt.trim() : 'https://www.tiktok.com/@lionbeer.ua', isIg: false, isTt: true, isTh: false },
+      { name: 'Threads', handle: handleOf(ST.th, '@lionbeer.ua'), href: has(ST.th) ? ST.th.trim() : 'https://www.threads.com/@lionbeer.ua', isIg: false, isTt: false, isTh: true }
     ];
 
     const count = s.cart.reduce((a, l) => a + l.qty, 0);
@@ -1354,15 +1364,19 @@ class Component extends DCLogic {
     const hasCart = count > 0;
 
     const phoneDigits = s.phone.replace(/\D/g, '').length;
+    const minV = Number(String(ST.min || '').replace(/[^\d]/g, '')) || 0;
     let missing = '';
     if (s.name.trim().length < 2) missing = "Вкажіть ім'я";
     else if (phoneDigits < 12) missing = 'Вкажіть номер телефону';
     else if (s.mode === 'delivery' && s.address.trim().length < 4) missing = 'Вкажіть адресу доставки';
+    else if (s.mode === 'delivery' && minV > 0 && total < minV) missing = 'Мінімальна сума доставки ' + minV + ' ₴. Додайте ще товарів або оберіть самовивіз';
     else if (s.mode === 'pickup' && s.when === 'slot' && !s.slot) missing = 'Оберіть час, коли заберете';
     else if (!s.age) missing = 'Підтвердіть, що вам є 18 років';
     const notReady = missing !== '' || !hasCart;
 
-    const OPEN_M = 10 * 60, CLOSE_M = 22 * 60; // години роботи: змінити в адмінці (демо 10:00–22:00)
+    let OPEN_M = 10 * 60, CLOSE_M = 22 * 60;
+    const hm = has(ST.hours) && ST.hours.match(/(\d{1,2})[:.](\d{2})\s*[-–—]\s*(\d{1,2})[:.](\d{2})/);
+    if (hm) { OPEN_M = Number(hm[1]) * 60 + Number(hm[2]); CLOSE_M = Number(hm[3]) * 60 + Number(hm[4]); if (CLOSE_M <= OPEN_M) CLOSE_M += 24 * 60; }
     const nowD = new Date();
     let startM = Math.max(OPEN_M, Math.ceil((nowD.getHours() * 60 + nowD.getMinutes() + 30) / 30) * 30);
     const slotList = [];
@@ -1381,8 +1395,12 @@ class Component extends DCLogic {
       pickAsap: () => this.setState({ when: 'asap', slot: '' }),
       pickSlotMode: () => this.setState({ when: 'slot' }),
       slots: slotList, hasSlots: slotList.length > 0, noSlots: slotList.length === 0,
+      cardT: isPk ? 'Карткою в магазині' : 'Переказом на карту',
+      cardS: isPk ? 'Сплатите терміналом, коли заберете' : 'Реквізити покажемо після оформлення',
+      showXfer: s.pay === 'card' && !isPk,
       cashT: isPk ? 'Готівкою в магазині' : "Готівкою кур'єру",
       doneTitle: isPk ? 'Самовивіз і оплата' : 'Доставка і оплата',
+      orderNo: s.orderNo, hasOrderNo: !!s.orderNo,
       doneLead: isPk ? 'Збираємо замовлення. Якщо будуть питання, зателефонуємо.' : 'Ми зателефонуємо вам для підтвердження.',
       whenText: s.when === 'slot' && s.slot ? 'Сьогодні о ' + s.slot : 'Якнайшвидше',
       accent,
@@ -1395,7 +1413,8 @@ class Component extends DCLogic {
       hasChips: filters.length > 1,
       noResults: q !== '' && shown.length === 0,
       socials,
-      mapsHref: 'https://maps.app.goo.gl/7LUDdEkn1Xc5o8Er9',
+      mapsHref: has(ST.maps) ? ST.maps.trim() : 'https://maps.app.goo.gl/7LUDdEkn1Xc5o8Er9',
+      shopAddr: has(ST.addr) ? ST.addr.trim() : '', hasShopAddr: has(ST.addr),
       slides: SLIDES.map((x, si) => ({ ...x, notBrand: !x.isBrand, hasChip: !!x.chip, hasSub: !!x.sub, hasTitle: !!x.title, cls: (x.clean ? 'clean ' : '') + (si === s.slide ? 'act' : ''), isClean: !!x.clean })),
       dots: SLIDES.map((x, i) => ({ n: i + 1, cls: i === s.slide ? 'on' : (i < s.slide ? 'done' : ''), pick: () => goSlide(i) })),
       trackX: -100 * s.slide,
@@ -1461,8 +1480,33 @@ class Component extends DCLogic {
       toggleAge: () => this.setState({ age: !this.state.age }),
       missing,
       notReady,
-      submit: () => { if (!notReady) { this.setState({ screen: 'done' }); top(); } },
-      payText: s.pay === 'cash' ? (isPk ? 'Готівкою в магазині' : "Готівкою кур'єру") : 'Переказом на карту',
+      submitLabel: s.sending ? 'Відправляю…' : 'Підтвердити замовлення · ' + fmt(total),
+      hasSendErr: !!s.sendErr, sendErr: s.sendErr || '',
+      submit: () => {
+        if (notReady || this.state.sending) return;
+        const st = this.state;
+        const pk = st.mode === 'pickup';
+        const payload = {
+          name: st.name.trim(), phone: st.phone, mode: st.mode,
+          city: pk ? '' : st.city, address: pk ? '' : st.address.trim(), note: st.note.trim(),
+          when: pk ? (st.when === 'slot' && st.slot ? 'Сьогодні о ' + st.slot : 'Якнайшвидше') : '',
+          pay: st.pay, payText: pk ? (st.pay === 'cash' ? 'Готівкою в магазині' : 'Карткою в магазині') : (st.pay === 'cash' ? "Готівкою кур'єру" : 'Переказом на карту'),
+          change: st.pay === 'cash' ? st.change.trim() : '',
+          lines: lines.map((l) => ({ name: l.name, vol: l.volText, qty: l.qty, sum: l.sumText })),
+          tara: taraLines.map((l) => ({ vol: l.volText, qty: l.qty, sum: l.sumText })),
+          total
+        };
+        this.setState({ sending: true, sendErr: '' });
+        fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+          .then((r) => r.json().then((j) => ({ ok: r.ok, j })))
+          .then(({ ok, j }) => {
+            if (!ok) throw new Error(j && j.error ? j.error : 'fail');
+            this.setState({ screen: 'done', sending: false, orderNo: j.n || '' });
+            top();
+          })
+          .catch((e) => this.setState({ sending: false, sendErr: String(e.message || '').indexOf('Забагато') === 0 ? e.message : 'Не вдалося відправити замовлення. Спробуйте ще раз або зателефонуйте нам' }));
+      },
+      payText: s.pay === 'cash' ? (isPk ? 'Готівкою в магазині' : "Готівкою кур'єру") : (isPk ? 'Карткою в магазині' : 'Переказом на карту'),
       reset: () => { this.setState({ screen: 'catalog', cart: [], pay: 'cash', mode: 'delivery', when: 'asap', slot: '', age: false, note: '', change: '' }); top(); }
     };
   }
