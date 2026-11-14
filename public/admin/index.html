@@ -211,6 +211,8 @@ body{background:#000}
 </div>
 </sc-if>
 <sc-for list="{{cats}}" as="c" hint-placeholder-count="3">
+<div>
+<sc-if value="{{c.groupTitle}}" hint-placeholder-val="{{ false }}"><div class="note" style="margin:18px 4px 8px;font-weight:700;color:var(--tx)">Снеки Вагові <span style="font-weight:500;color:var(--mu)">· групи з Poster</span></div></sc-if>
 <div class="cat lg {{c.cls}}">
 <div class="cat-h">
 <button class="cat-b" onClick="{{c.expand}}" aria-expanded="{{c.isOpen}}">
@@ -219,7 +221,9 @@ body{background:#000}
 </button>
 <input class="sw" type="checkbox" checked="{{c.all}}" onChange="{{c.toggle}}" aria-label="Показувати всю категорію на сайті">
 </div>
-<div class="cat-body"><div class="cat-in"><div class="plist">
+<div class="cat-body"><div class="cat-in">
+<sc-if value="{{c.hasLabel}}" hint-placeholder-val="{{ false }}"><div class="fld" style="margin:0 0 12px"><label>Назва кнопки-фільтра на сайті</label><input class="in" type="text" value="{{c.label}}" onInput="{{c.onLabel}}"><span class="hint">У Poster: «{{c.name}}». На сайті буде це коротке слово.</span></div></sc-if>
+<div class="plist">
 <sc-for list="{{c.items}}" as="p" hint-placeholder-count="2">
 <div class="row">
 <input class="sw" type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}" aria-label="Показувати на сайті">
@@ -228,6 +232,7 @@ body{background:#000}
 </div>
 </sc-for>
 </div></div></div>
+</div>
 </div>
 </sc-for>
 </div>
@@ -382,6 +387,8 @@ body{background:#000}
 <button class="link" onClick="{{resetPrice}}">Повернути ціну з Poster</button>
 </div>
 <div class="fld"><label for="e-d">Опис</label><textarea id="e-d" class="in" placeholder="Смак, аромат, з чим пити" onInput="{{onEDesc}}">{{ed.desc}}</textarea></div>
+<sc-if value="{{ed.isBeerCat}}" hint-placeholder-val="{{ true }}">
+<div>
 <div class="fld"><label>Рівні для пива</label><span class="hint">Вмикайте лише потрібне. Для сидру чи просекко можна обрати тільки міцність.</span></div>
 <sc-for list="{{metrics}}" as="m" hint-placeholder-count="3">
 <div class="mbox">
@@ -397,6 +404,8 @@ body{background:#000}
 </sc-if>
 </div>
 </sc-for>
+</div>
+</sc-if>
 <div class="fld">
 <label>Бейдж на картці</label>
 <div class="chips">
@@ -702,7 +711,12 @@ class Component extends DCLogic {
       const items = D.prods.filter((p) => p.c === c.id);
       const n = items.filter((p) => on[p.i]).length;
       const open = s.openCat === c.id;
+      const SUBL = { '9': 'Кальмар', '10': 'Риба', '11': "М'ясо", '12': 'Горіхи' };
+      const labels = (s.site && s.site.labels) || {};
+      const isSub = !!SUBL[c.id];
       return {
+        groupTitle: c.id === '9', hasLabel: isSub, label: labels[c.id] !== undefined ? labels[c.id] : (SUBL[c.id] || ''),
+        onLabel: (e) => this.setState({ site: { ...this.state.site, labels: { ...((this.state.site && this.state.site.labels) || {}), [c.id]: e.target.value } } }),
         name: c.n,
         status: n === 0 ? 'Не на сайті · ' + c.c + ' товарів' : (n === c.c ? 'Усі ' + c.c + ' на сайті' : n + ' з ' + c.c + ' на сайті'),
         cls: open ? 'open' : '',
@@ -836,6 +850,7 @@ class Component extends DCLogic {
       closeEdit: () => this.setState({ drOpen: false }),
       ed: {
         title: 'Редагування товару',
+        isBeerCat: ['13', '15'].indexOf(cur.c) >= 0,
         name: s.draft.name || '', price: s.draft.price || '', desc: s.draft.desc || '',
         str: s.draft.str || '', den: s.draft.den || '', prod: s.draft.prod || '',
         posterPrice: (s.draft.pp != null && s.draft.pp !== '' ? Number(s.draft.pp) : cur.p) === 0 ? '—' : fmt(s.draft.pp != null && s.draft.pp !== '' ? Number(s.draft.pp) : cur.p),

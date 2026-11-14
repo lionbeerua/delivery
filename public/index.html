@@ -1289,7 +1289,9 @@ class Component extends DCLogic {
       };
     });
 
-    const SNACK_F = [{ id: 'all', label: 'Усі' }, { id: 'fish', label: 'Риба' }, { id: 'squid', label: 'Кальмар' }, { id: 'meat', label: "М'ясо" }, { id: 'nuts', label: 'Горіхи' }];
+    const LB = (s.catalog && s.catalog.site && s.catalog.site.labels) || {};
+    const lbl = (cid, d) => (String(LB[cid] == null ? '' : LB[cid]).trim() || d);
+    const SNACK_F = [{ id: 'all', label: 'Усі' }, { id: 'fish', label: lbl('10', 'Риба') }, { id: 'squid', label: lbl('9', 'Кальмар') }, { id: 'meat', label: lbl('11', "М'ясо") }, { id: 'nuts', label: lbl('12', 'Горіхи') }];
     const present = {};
     PRODUCTS.forEach((p) => { present[p.group] = true; });
     const filters = (s.cat === 'snacks' ? SNACK_F : (s.cat === 'drinks' ? FILTERS : [])).filter((f) => f.id === 'all' || present[f.id]).map((f) => ({
