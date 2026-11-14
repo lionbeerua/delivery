@@ -430,7 +430,10 @@ body{background:#000}
 </sc-for>
 </div>
 </div>
-<div class="fld"><label>Фото (вертикальне, формат 3:4)</label><span class="hint">Бокал на чорному фоні, як на цінниках. Ідеально 900×1200 пікселів.</span><button class="drop"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>Завантажити вертикальне фото</button></div>
+<div class="fld"><label>Фото (вертикальне, формат 3:4)</label><span class="hint">Бокал на чорному фоні, як на цінниках. Ідеально 900×1200 пікселів.</span><sc-if value="{{ed.hasImg}}" hint-placeholder-val="{{ false }}"><img class="bprev" style="max-height:300px;object-fit:contain;background:#000" src="{{ed.img}}" alt="Фото товару"></sc-if>
+<input id="pf" type="file" accept="image/*" style="display:none" onChange="{{onPhoto}}">
+<button class="drop" onClick="{{pickPhoto}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{photoLabel}}</button>
+<sc-if value="{{ed.hasImg}}" hint-placeholder-val="{{ false }}"><button class="link" onClick="{{clearPhoto}}">Прибрати фото</button></sc-if></div>
 <button class="cta" onClick="{{saveEdit}}">Зберегти товар</button>
 </section>
 
@@ -601,6 +604,29 @@ class Component extends DCLogic {
       .catch(() => this.setState({ bLoaded: true }));
   }
 
+  async uploadPhoto(file) {
+    if (!file) return;
+    this.setState({ photoBusy: true });
+    try {
+      const bmp = await createImageBitmap(file);
+      const sc = Math.min(1, 900 / bmp.width, 1200 / bmp.height);
+      const w = Math.round(bmp.width * sc), h = Math.round(bmp.height * sc);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.drawImage(bmp, 0, 0, w, h);
+      const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', 0.88));
+      const r = await fetch('/api/admin/upload', { method: 'POST', body: blob, credentials: 'same-origin' });
+      if (!r.ok) throw new Error('upload');
+      const { url } = await r.json();
+      const id = this.state.editId;
+      const draft = { ...this.state.draft, img: url };
+      this.setState({ draft, edits: { ...this.state.edits, [id]: { ...draft, preset: this.state.preset } }, photoBusy: false });
+      this.saveAll();
+    } catch (e) {
+      this.setState({ photoBusy: false });
+      this._toast && this._toast('Не вдалося завантажити фото');
+    }
+  }
+
   async uploadImage(i, file) {
     if (!file) return;
     try {
@@ -700,7 +726,7 @@ class Component extends DCLogic {
           const ee = this.state.edits[p.i] || {};
           this.setState({
             editId: p.i, drOpen: true,
-            draft: { mods: ee.mods || (DEFMODS[p.i] || []).map((n) => ({ n, p: '', on: true })), name: ee.name || p.n, price: ee.price !== undefined ? ee.price : String(p.p).replace('.', ','), desc: ee.desc || '', m: ee.m || (p.c === '13' ? { str: { on: true, v: '', l: 0 }, bit: { on: true, v: '', l: 0 }, den: { on: true, v: '', l: 0 } } : JSON.parse(JSON.stringify(DEFM))) },
+            draft: { img: ee.img || '', mods: ee.mods || (DEFMODS[p.i] || []).map((n) => ({ n, p: '', on: true })), name: ee.name || p.n, price: ee.price !== undefined ? ee.price : String(p.p).replace('.', ','), desc: ee.desc || '', m: ee.m || (p.c === '13' ? { str: { on: true, v: '', l: 0 }, bit: { on: true, v: '', l: 0 }, den: { on: true, v: '', l: 0 } } : JSON.parse(JSON.stringify(DEFM))) },
             preset: ee.preset || (p.c === '13' || p.c === '15' || p.c === '7' ? 'beer' : (p.w ? 'snack' : 'piece'))
           });
         }
@@ -850,6 +876,7 @@ class Component extends DCLogic {
       closeEdit: () => this.setState({ drOpen: false }),
       ed: {
         title: 'Редагування товару',
+        img: s.draft.img || '', hasImg: !!s.draft.img,
         isBeerCat: ['13', '15'].indexOf(cur.c) >= 0,
         name: s.draft.name || '', price: s.draft.price || '', desc: s.draft.desc || '',
         str: s.draft.str || '', den: s.draft.den || '', prod: s.draft.prod || '',
@@ -857,6 +884,10 @@ class Component extends DCLogic {
         unitHint: cur.w ? 'за 100 г' : 'за одиницю в Poster'
       },
       onEName: dset('name'), onEPrice: dset('price'), onEDesc: dset('desc'), onEStr: dset('str'), onEDen: dset('den'), onEProd: dset('prod'),
+      photoLabel: s.photoBusy ? 'Завантажую…' : (s.draft.img ? 'Замінити фото' : 'Завантажити вертикальне фото'),
+      pickPhoto: () => { const el = document.getElementById('pf'); if (el) el.click(); },
+      onPhoto: (e) => { const f = e.target.files && e.target.files[0]; this.uploadPhoto(f); e.target.value = ''; },
+      clearPhoto: () => { const id = s.editId; const draft = { ...this.state.draft, img: '' }; this.setState({ draft, edits: { ...this.state.edits, [id]: { ...draft, preset: this.state.preset } } }); this.saveAll(); },
       resetPrice: () => this.setState({ draft: { ...this.state.draft, price: String(this.state.draft.pp != null && this.state.draft.pp !== '' ? this.state.draft.pp : cur.p).replace('.', ',') } }),
       syncPriceLabel: s.pSyncing ? 'Перевіряю Poster…' : 'Синхронізувати ціну з Poster',
       syncPrice: () => {

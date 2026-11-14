@@ -1140,6 +1140,7 @@ class Component extends DCLogic {
         const e = (C.edits && C.edits[p.id]) || {};
         const q = { ...p };
         if (e.name) q.name = e.name;
+        if (e.img && /^\/u\/[0-9a-f]{12}$/.test(e.img)) { q.img = e.img; q.imgStyle = 'object-position:50% 50%'; }
         const pr = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : 0;
         if (pr > 0) { q.half = pr; if (q.unit === 'g') q.per100 = pr; if (q.unit === 'pc') q.pc = pr; }
         if (e.desc !== undefined || e.m) q.meta = { ...(p.meta || {}), desc: e.desc !== undefined ? e.desc : ((p.meta && p.meta.desc) || ''), ...(e.m ? { m: e.m } : {}) };
