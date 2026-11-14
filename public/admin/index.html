@@ -141,6 +141,7 @@ body{background:#000}
 .lg::before{display:none}
 .scrim{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(0,0,0,.7)}
 .dr{background:#0f0f0f;backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid #2a2a2a;border-bottom:0}
+.dz-over{border-color:#f2c142!important;background:rgba(242,193,66,.14)!important;color:#f2c142!important;outline:2px dashed #f2c142;outline-offset:2px}
 .bprev{display:block;width:100%;max-height:220px;object-fit:cover;border-radius:14px;margin-bottom:10px;border:1px solid #2a2a2a}
 .savebar{position:fixed;left:12px;right:12px;bottom:14px;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 10px 10px 18px;border-radius:18px;background:#1b1b1b;border:1px solid #f2c142;box-shadow:0 10px 30px rgba(0,0,0,.6);color:#fff;font-weight:600;font-size:15px;max-width:640px;margin:0 auto}
 .savebar button{height:46px;padding:0 20px;border:0;border-radius:13px;background:#f2c142;color:#1b1403;font-weight:800;font-size:16px;cursor:pointer}
@@ -274,9 +275,9 @@ body{background:#000}
 <div class="fld"><label for="bt{{b.n}}">Заголовок</label><input id="bt{{b.n}}" class="in" type="text" placeholder="Коротко й ясно" value="{{b.title}}" onInput="{{b.onTitle}}"></div>
 <div class="fld"><label for="bs{{b.n}}">Короткий текст</label><input id="bs{{b.n}}" class="in" type="text" placeholder="Терміни, умови" value="{{b.sub}}" onInput="{{b.onSub}}"></div>
 <div class="fld"><span class="hint">Розмір: 1080 × 1200 пікселів (майже квадрат, трохи вищий). Формат JPG або WebP, до 400 КБ. Найважливіше розміщуйте в центрі та вгорі. Внизу лишайте місце під текст: його покриває темний градієнт. Без тексту на самому фото, заголовок додається на сайті.</span></div>
-<div class="fld"><sc-if value="{{b.hasImg}}" hint-placeholder-val="{{ false }}"><img class="bprev" src="{{b.img}}" alt="Фото банера"></sc-if>
+<div class="fld"><sc-if value="{{b.hasImg}}" hint-placeholder-val="{{ false }}"><img class="bprev" data-dz="b{{b.n}}" src="{{b.img}}" alt="Фото банера"></sc-if>
 <input id="bf{{b.n}}" type="file" accept="image/*" style="display:none" onChange="{{b.onFile}}">
-<button class="drop" style="height:76px" onClick="{{b.pickFile}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{b.upLabel}}</button></div>
+<button class="drop" style="height:76px" data-dz="b{{b.n}}" onClick="{{b.pickFile}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{b.upLabel}}</button></div>
 <button class="link" style="margin-top:8px" onClick="{{b.remove}}">Видалити банер</button>
 </div>
 </sc-for>
@@ -465,9 +466,9 @@ body{background:#000}
 </sc-for>
 </div>
 </div>
-<div class="fld"><label>Фото (вертикальне, формат 3:4)</label><span class="hint">Бокал на чорному фоні, як на цінниках. Ідеально 900×1200 пікселів.</span><sc-if value="{{ed.hasImg}}" hint-placeholder-val="{{ false }}"><img class="bprev" style="max-height:300px;object-fit:contain;background:#000" src="{{ed.img}}" alt="Фото товару"></sc-if>
+<div class="fld"><label>Фото (вертикальне, формат 3:4)</label><span class="hint">Бокал на чорному фоні, як на цінниках. Ідеально 900×1200 пікселів.</span><sc-if value="{{ed.hasImg}}" hint-placeholder-val="{{ false }}"><img class="bprev" data-dz="p" style="max-height:300px;object-fit:contain;background:#000" src="{{ed.img}}" alt="Фото товару"></sc-if>
 <input id="pf" type="file" accept="image/*" style="display:none" onChange="{{onPhoto}}">
-<button class="drop" onClick="{{pickPhoto}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{photoLabel}}</button>
+<button class="drop" data-dz="p" onClick="{{pickPhoto}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{photoLabel}}</button>
 <sc-if value="{{ed.hasImg}}" hint-placeholder-val="{{ false }}"><button class="link" onClick="{{clearPhoto}}">Прибрати фото</button></sc-if></div>
 <button class="cta" onClick="{{saveEdit}}">Зберегти товар</button>
 </section>
@@ -619,9 +620,31 @@ class Component extends DCLogic {
       .catch(() => { this.setState({ orders: prev }); });
   }
 
-  componentWillUnmount() { if (this._poll) clearInterval(this._poll); }
+  componentWillUnmount() { if (this._poll) clearInterval(this._poll); document.removeEventListener('dragover', this._dzOver); document.removeEventListener('drop', this._dzDrop); document.removeEventListener('dragleave', this._dzLeave); }
 
   componentDidMount() {
+    const zone = (e) => { const t = e.target && e.target.closest ? e.target.closest('[data-dz]') : null; return t; };
+    this._dzOver = (e) => {
+      if (!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') < 0) return;
+      e.preventDefault();
+      document.querySelectorAll('.dz-over').forEach((x) => x.classList.remove('dz-over'));
+      const z = zone(e); if (z) z.classList.add('dz-over');
+    };
+    this._dzDrop = (e) => {
+      if (!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') < 0) return;
+      e.preventDefault();
+      document.querySelectorAll('.dz-over').forEach((x) => x.classList.remove('dz-over'));
+      const z = zone(e); const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!z || !f) return;
+      if (!/^image\//.test(f.type)) { this._toast && this._toast('Потрібне зображення (JPG або PNG)'); return; }
+      const k = z.getAttribute('data-dz');
+      if (k === 'p') this.uploadPhoto(f);
+      else if (k && k[0] === 'b') this.uploadImage(Number(k.slice(1)) - 1, f);
+    };
+    this._dzLeave = (e) => { if (!e.relatedTarget) document.querySelectorAll('.dz-over').forEach((x) => x.classList.remove('dz-over')); };
+    document.addEventListener('dragover', this._dzOver);
+    document.addEventListener('drop', this._dzDrop);
+    document.addEventListener('dragleave', this._dzLeave);
     this.loadOrders();
     this._poll = setInterval(() => { if (this.state.tab === 'orders' || this.state.tab === 'stats') this.loadOrders(); }, 30000);
     if (!this.state.on) this.setState({ on: this.initOn() });
