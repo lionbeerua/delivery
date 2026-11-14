@@ -97,6 +97,11 @@ button:active{transform:scale(.95);transition-duration:.12s}
 .add svg{animation:pop .35s cubic-bezier(.34,1.56,.64,1) both}
 
 .bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);width:calc(100% - 28px);max-width:520px;height:64px;border-radius:32px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 14px;font-weight:800;font-size:17px;color:var(--tx);cursor:pointer;animation:barin .7s cubic-bezier(.34,1.45,.5,1) both;z-index:30;border:1px solid rgba(255,255,255,.28)}
+.freebar{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);width:calc(100% - 28px);max-width:520px;border-radius:20px;padding:10px 16px 12px;z-index:39;background:linear-gradient(rgba(22,19,14,.92),rgba(22,19,14,.92))!important}
+.free-t{font-size:14px;font-weight:600;margin-bottom:8px;text-align:center}
+.free-t b{color:var(--gold)}
+.free-tr{height:6px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}
+.free-tr i{display:block;height:100%;border-radius:3px;background:var(--gold);transition:width .5s cubic-bezier(.22,1,.36,1)}
 .bar:active{transform:translateX(-50%) scale(.97)}
 .bar-l{display:flex;align-items:center;gap:12px}
 .bar-c{min-width:38px;height:38px;border-radius:19px;background:var(--gold);color:var(--ink);display:grid;place-items:center;font-size:15px;padding:0 10px}
@@ -622,6 +627,9 @@ button:active{transform:scale(.95);transition-duration:.12s}
 </main>
 </div>
 
+<sc-if value="{{showFree}}" hint-placeholder-val="{{ false }}">
+<div class="freebar lg" role="status"><div class="free-t">{{freeText}}</div><div class="free-tr"><i style="{{freeSt}}"></i></div></div>
+</sc-if>
 <sc-if value="{{showBar}}" hint-placeholder-val="{{ false }}">
 <button class="bar lg" onClick="{{openCart}}">
 <span class="bar-l"><span class="bar-c {{bumpCls}}">{{count}}</span>Кошик</span>
@@ -1431,6 +1439,11 @@ class Component extends DCLogic {
 
     const phoneDigits = s.phone.replace(/\D/g, '').length;
     const minV = Number(String(ST.min || '').replace(/[^\d]/g, '')) || 0;
+    const freeV = ST.free === undefined ? 800 : (Number(String(ST.free || '').replace(/[^\d]/g, '')) || 0);
+    const freeLeft = Math.max(0, freeV - total);
+    const showFree = hasCart && !s.cartOpen && freeV > 0 && s.mode !== 'pickup';
+    const freeText = freeLeft > 0 ? 'До безкоштовної доставки ще ' + fmt(freeLeft) : 'Доставка безкоштовна';
+    const freeSt = 'width:' + Math.min(100, Math.round((total / (freeV || 1)) * 100)) + '%';
     let missing = '';
     if (s.name.trim().length < 2) missing = "Вкажіть ім'я";
     else if (phoneDigits < 12) missing = 'Вкажіть номер телефону';
@@ -1509,7 +1522,7 @@ class Component extends DCLogic {
       hasCart,
       noCart: !hasCart,
       totalText: fmt(total),
-      showBar: hasCart && !s.cartOpen,
+      showBar: hasCart && !s.cartOpen, showFree, freeText, freeSt,
       scrimCls: s.cartOpen ? 'open' : '',
       sheetCls: s.cartOpen ? 'open' : '',
       openCart: () => this.setState({ cartOpen: true }),

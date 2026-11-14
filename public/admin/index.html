@@ -384,6 +384,7 @@ body{background:#000}
 <div class="fld"><label for="s-p">Вартість доставки</label><input id="s-p" class="in" type="text" placeholder="Сума" value="{{site.price}}" onInput="{{onPrice}}"></div>
 <div class="fld"><label for="s-m">Мінімальна сума</label><input id="s-m" class="in" type="text" placeholder="Сума" value="{{site.min}}" onInput="{{onMin}}"></div>
 </div>
+<div class="fld"><label for="s-f">Безкоштовна доставка від, ₴</label><input id="s-f" class="in" type="text" inputmode="numeric" placeholder="Наприклад, 800" value="{{site.free}}" onInput="{{onFree}}"><span class="hint">Внизу сайту клієнт бачить смужку «ще стільки до безкоштовної доставки». Залиште поле порожнім, щоб вимкнути.</span></div>
 </div>
 <div class="blk lg">
 <h2>Контакти</h2>
@@ -623,7 +624,7 @@ class Component extends DCLogic {
     tara: { '0.5': '6', '1': '7', '1.5': '7', '2': '8', '3': '9' },
     banners: [],
     bLoaded: false,
-    site: { hours: '', zone: '', price: '', min: '', phone: '+380', addr: '', ig: 'https://www.instagram.com/lionbeer.ua/', tt: 'https://www.tiktok.com/@lionbeer.ua', th: 'https://www.threads.com/@lionbeer.ua', maps: 'https://maps.app.goo.gl/7LUDdEkn1Xc5o8Er9' }
+    site: { hours: '', zone: '', price: '', min: '', free: '800', phone: '+380', addr: '', ig: 'https://www.instagram.com/lionbeer.ua/', tt: 'https://www.tiktok.com/@lionbeer.ua', th: 'https://www.threads.com/@lionbeer.ua', maps: 'https://maps.app.goo.gl/7LUDdEkn1Xc5o8Er9' }
   };
 
   loadOrders() {
@@ -1128,7 +1129,7 @@ class Component extends DCLogic {
       periods,
       orderCards, noOrders, ordersMsg, stCount, stRev, stAvg, stCancel, bars, barsTitle, barsNote, topItems, topNote, stCash, stCard, stDel, stPick,
       site: s.site,
-      onHours: sset('hours'), onZone: sset('zone'), onPrice: sset('price'), onMin: sset('min'), onPhone: sset('phone'), onAddr: sset('addr'), onIg: sset('ig'), onTt: sset('tt'), onTh: sset('th'), onMaps: sset('maps'),
+      onHours: sset('hours'), onZone: sset('zone'), onPrice: sset('price'), onMin: sset('min'), onFree: sset('free'), onPhone: sset('phone'), onAddr: sset('addr'), onIg: sset('ig'), onTt: sset('tt'), onTh: sset('th'), onMaps: sset('maps'),
       tgOn: s.tgOn, onTg: () => this.setState({ tgOn: !this.state.tgOn }),
       saveSite: () => this.saveAll(),
       drCls: s.drOpen ? 'open' : '',
