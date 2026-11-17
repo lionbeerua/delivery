@@ -1204,7 +1204,8 @@ class Component extends DCLogic {
       const e = (s.catalog && s.catalog.edits && s.catalog.edits[p.id]) || {};
       const q = { ...p, cat0: p.cat, mOn: (e.mt !== undefined && e.mt !== '') ? !!e.mt : /^Пиво/.test(p.kind || '') };
       if (e.sc && SC.find((c) => c.id === e.sc)) q.cat = e.sc;
-      if (e.fl) q.group = e.fl;
+      q.groups = Array.isArray(e.fls) ? e.fls.filter((x) => x && x !== '_') : (e.fl ? (e.fl === '_' ? [] : [e.fl]) : [p.group]);
+      if (q.groups.length) q.group = q.groups[0];
       const nu = UNITM[e.upre];
       if (nu && nu !== q.unit) {
         const pr = e.price !== undefined && e.price !== '' ? Number(String(e.price).replace(',', '.')) : (q.unit === 'g' ? q.per100 : (q.unit === 'pc' ? q.pc : q.half));
@@ -1273,7 +1274,7 @@ class Component extends DCLogic {
       return q.split(/\s+/).every((w) => hay.indexOf(w) >= 0);
     };
     const inCat = (p) => p.cat === CURC;
-    const shown = q ? PRODUCTS.filter(matches) : PRODUCTS.filter((p) => inCat(p) && (s.filter === 'all' || p.group === s.filter));
+    const shown = q ? PRODUCTS.filter(matches) : PRODUCTS.filter((p) => inCat(p) && (s.filter === 'all' || (p.groups ? p.groups.indexOf(s.filter) >= 0 : p.group === s.filter)));
     const GP = [50, 100, 150, 200];
     const products = shown.map((p, idx) => {
       const isSnack = p.unit === 'g';
@@ -1362,7 +1363,7 @@ class Component extends DCLogic {
     const DEFF = { drinks: FILTERS.filter((f) => f.id !== 'all').map((f) => ({ id: f.id, n: f.label })), snacks: SNACK_F.filter((f) => f.id !== 'all').map((f) => ({ id: f.id, n: f.label })) };
     const FL = Array.isArray(SF[CURC]) ? SF[CURC] : (DEFF[CURC] || []);
     const present = {};
-    PRODUCTS.forEach((p) => { if (p.cat === CURC) present[p.group] = true; });
+    PRODUCTS.forEach((p) => { if (p.cat === CURC) (p.groups || [p.group]).forEach((g) => { present[g] = true; }); });
     const filters = [{ id: 'all', label: 'Усі' }].concat(FL.filter((f) => f && f.id && String(f.n || '').trim()).map((f) => ({ id: f.id, label: f.n }))).filter((f) => f.id === 'all' || present[f.id]).map((f) => ({
       label: f.label,
       cls: f.id === s.filter ? 'on' : '',
