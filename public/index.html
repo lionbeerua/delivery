@@ -1177,7 +1177,7 @@ class Component extends DCLogic {
           let nm = m.n.replace(/\s+(0[.,]\d+|\d+)\s*(л|мл|l|ml)\.?$/i, '').replace(/\s+(з\/б|з\.б\.?)$/i, '').trim();
           let kind = '', unit = 'pc', cat = 'snacks', group = 'other';
           const lead = nm.match(/^(\S+)\s+на розлив\s+/i);
-          if (m.c === '13') { cat = 'drinks'; unit = 'l'; kind = lead ? lead[1] : 'Напої'; nm = nm.replace(/^(\S+)\s+на розлив\s+/i, ''); group = ({ 'Пиво': 'other', 'Вино': 'other', 'Сидр': 'cider', 'Квас': 'soft', 'Лимонад': 'soft' })[kind] || 'other'; }
+          if (m.c === '13') { cat = 'drinks'; unit = 'l'; kind = lead ? lead[1] : 'Напої'; nm = nm.replace(/^(\S+)\s+на розлив\s+/i, '').replace(/^(світле|темне|імпорт)\s+(?=\S)/i, ''); group = ({ 'Пиво': 'other', 'Вино': 'other', 'Сидр': 'cider', 'Квас': 'soft', 'Лимонад': 'soft' })[kind] || 'other'; }
           else if (m.c === '15') { cat = 'bottle'; kind = 'Пиво в пляшці'; group = 'bottle'; }
           else if (m.c === '7') { cat = 'bottle'; kind = 'Напої'; group = 'bottle'; }
           else if (SUBK[m.c]) { cat = 'snacks'; kind = (LBX[m.c] && String(LBX[m.c]).trim()) || SUBK[m.c][0]; group = SUBK[m.c][1]; unit = m.w ? 'g' : 'pc'; }

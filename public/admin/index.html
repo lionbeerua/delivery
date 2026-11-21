@@ -429,7 +429,10 @@ body{background:#000}
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
 </button>
 </div>
-<div class="fld"><label for="e-n">Назва на сайті</label><input id="e-n" class="in" type="text" value="{{ed.name}}" onInput="{{onEName}}"></div>
+<div class="fld"><label>Назва в Poster</label><div class="in" style="height:auto;min-height:44px;display:flex;align-items:center;opacity:.75;white-space:normal">{{ed.posterName}}</div></div>
+<div class="fld"><label for="e-n">Назва на сайті</label><input id="e-n" class="in" type="text" value="{{ed.name}}" onInput="{{onEName}}">
+<button class="act" style="margin-top:10px;width:100%" onClick="{{syncName}}">Синхронізувати назву з Poster</button>
+<span class="hint">Бере назву з Poster і прибирає «пиво/вино на розлив», об'єм і «світле/темне/імпорт» на початку.</span></div>
 <div class="fld"><label>Категорія на сайті</label>
 <div class="chips"><sc-for list="{{scats}}" as="u" hint-placeholder-count="4"><button class="chip {{u.cls}}" onClick="{{u.pick}}" aria-pressed="{{u.active}}">{{u.label}}</button></sc-for></div>
 <span class="hint">У якій вкладці на сайті покажеться товар. Категорії створюються у вкладці «Сайт».</span></div>
@@ -817,7 +820,7 @@ class Component extends DCLogic {
 
   applyMenu(m, report) {
     const bk = this._bk || {};
-    const prods = (m.prods || []).map((x) => ({ i: x.i, c: x.c, n: x.n, dn: String(x.n || '').replace(/^(\S+)\s+на розлив\s+/i, (m0, k) => (/^(пиво|вино)$/i.test(k) ? '' : k + ' ')).replace(/\s+(0[.,]\d+|\d+)\s*(л|мл|l|ml)\.?$/i, '').replace(/\s+(з\/б|з\.б\.?)$/i, '').trim(), p: x.p, w: x.w }));
+    const prods = (m.prods || []).map((x) => ({ i: x.i, c: x.c, n: x.n, dn: String(x.n || '').replace(/^(\S+)\s+на розлив\s+/i, (m0, k) => (/^(пиво|вино)$/i.test(k) ? '' : k + ' ')).replace(/\s+(0[.,]\d+|\d+)\s*(л|мл|l|ml)\.?$/i, '').replace(/\s+(з\/б|з\.б\.?)$/i, '').replace(/^(світле|темне|імпорт)\s+(?=\S)/i, '').trim(), p: x.p, w: x.w }));
     const parents = {};
     (m.cats || []).forEach((c) => { parents[c.parent] = true; });
     const base = this._d0.cats;
@@ -1142,9 +1145,11 @@ class Component extends DCLogic {
         mOn: s.draft.mt !== '' && s.draft.mt !== undefined ? !!s.draft.mt : this.defM(cur),
         name: s.draft.name || '', price: s.draft.price || '', desc: s.draft.desc || '',
         str: s.draft.str || '', den: s.draft.den || '', prod: s.draft.prod || '',
+        posterName: cur.n || '—',
         posterPrice: cur.p === 0 ? '—' : fmt(cur.p),
         unitHint: cur.w ? 'за 100 г' : 'за одиницю в Poster'
       },
+      syncName: () => this.setState({ draft: { ...this.state.draft, name: cur.dn || cur.n || '' } }),
       onEName: dset('name'), onEPrice: dset('price'), onEDesc: dset('desc'), onEStr: dset('str'), onEDen: dset('den'), onEProd: dset('prod'),
       photoLabel: s.photoBusy ? 'Завантажую…' : (s.draft.img ? 'Замінити фото' : 'Завантажити, перетягнути або Ctrl+V'),
       pickPhoto: () => { const el = document.getElementById('pf'); if (el) el.click(); },
