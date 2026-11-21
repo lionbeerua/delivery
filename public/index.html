@@ -175,8 +175,8 @@ button:active{transform:scale(.95);transition-duration:.12s}
 .xfer p{margin:0;font-size:14px;color:var(--mu);line-height:1.6}
 .ghost{width:100%;height:58px;border-radius:29px;color:var(--tx);font-weight:800;font-size:16px;cursor:pointer;margin-top:18px}
 
-.car{position:relative;margin-top:14px;border-radius:36px;overflow:hidden;height:460px;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 60px rgba(0,0,0,.5);touch-action:pan-y;background:#15130F}
-.track{display:flex;height:100%;transition:transform .9s cubic-bezier(.32,.72,0,1)}
+.car{position:relative;margin-top:14px;border-radius:36px;overflow:hidden;height:auto;aspect-ratio:var(--r,.9);border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 60px rgba(0,0,0,.5);touch-action:pan-y;background:#15130F}
+.track{display:flex;position:absolute;inset:0;width:100%;height:100%;transition:transform .9s cubic-bezier(.32,.72,0,1)}
 .slide{position:relative;flex:0 0 100%;height:100%;overflow:hidden}
 .slide .zoom{position:absolute;inset:0;animation:kb 14s ease-in-out infinite alternate}
 .slide img.bg{width:100%;height:100%;object-fit:cover;display:block}
@@ -345,7 +345,7 @@ button:active{transform:scale(.95);transition-duration:.12s}
 
 @media (min-width:720px){
 .wrap{padding:0 24px}
-.car{height:540px}
+.car{height:540px;aspect-ratio:auto}
 .hero-c{padding:40px 44px}
 .st{font-size:64px}
 .lead{font-size:16px;max-width:420px}
@@ -1049,10 +1049,12 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this._last = Date.now();
+    this._fitCar = (u) => { try { const im = new Image(); im.onload = () => { const r = im.naturalWidth / im.naturalHeight; if (r > 0) { const c = document.querySelector('.car'); if (c) c.style.setProperty('--r', String(Math.max(0.72, Math.min(1.25, r)).toFixed(4))); } }; im.src = u; } catch (e) {} };
+    this._fitCar(this.state.banners && this.state.banners[0] && this.state.banners[0].img || '/img/banner1.jpg');
     try {
       fetch('/api/menu').then((r) => (r.ok ? r.json() : null)).then((m) => { if (m && m.prods) this.setState({ menu: m }); }).catch(() => {});
       fetch('/api/catalog').then((r) => (r.ok ? r.json() : null)).then((c) => { if (c && c.on) this.setState({ catalog: c }); }).catch(() => {});
-      fetch('/api/banners').then((r) => (r.ok ? r.json() : null)).then((list) => { if (Array.isArray(list) && list.length) this.setState({ banners: list, slide: 0 }); }).catch(() => {});
+      fetch('/api/banners').then((r) => (r.ok ? r.json() : null)).then((list) => { if (Array.isArray(list) && list.length) { this.setState({ banners: list, slide: 0 }); const f = list.find((b) => b.on !== false && b.img); if (f) this._fitCar(f.img); } }).catch(() => {});
     } catch (e) { /* без сервера лишається стандартний банер */ }
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     this._t = setInterval(() => {
